@@ -59,6 +59,16 @@ class Partner extends Model
         return $this->hasMany(Invoice::class);
     }
 
+    public function pricingRules(): HasMany
+    {
+        return $this->hasMany(PartnerPricingRule::class);
+    }
+
+    public function activePricingRules(): HasMany
+    {
+        return $this->hasMany(PartnerPricingRule::class)->where('is_active', true);
+    }
+
     public function scopeActive($query)
     {
         return $query->where('status', 'active')->where('is_active', true);

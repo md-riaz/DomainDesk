@@ -14,9 +14,12 @@ return new class extends Migration
         Schema::create('registrars', function (Blueprint $table) {
             $table->id();
             $table->string('name');
+            $table->string('slug')->unique();
             $table->string('api_class')->nullable();
             $table->json('credentials')->nullable();
             $table->boolean('is_active')->default(true);
+            $table->boolean('is_default')->default(false);
+            $table->timestamp('last_sync_at')->nullable();
             $table->timestamps();
         });
     }
