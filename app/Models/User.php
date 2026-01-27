@@ -2,15 +2,19 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Enums\Role;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, SoftDeletes;
 
     /**
      * The attributes that are mass assignable.
@@ -21,6 +25,8 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role',
+        'partner_id',
     ];
 
     /**
@@ -43,6 +49,75 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'role' => Role::class,
         ];
+    }
+
+    /**
+     * Boot the model.
+     */
+    protected static function booted(): void
+    {
+        static::saving(function (User $user) {
+            if ($user->role === Role::Client && $user->partner_id === null) {
+                throw new \InvalidArgumentException('Clients must have a partner_id');
+            }
+        });
+    }
+
+    // Relationships
+
+    public function partner(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'partner_id');
+    }
+
+    public function clients(): HasMany
+    {
+        return $this->hasMany(User::class, 'partner_id');
+    }
+
+    // Role Check Methods
+
+    public function isSuperAdmin(): bool
+    {
+        return $this->role === Role::SuperAdmin;
+    }
+
+    public function isPartner(): bool
+    {
+        return $this->role === Role::Partner;
+    }
+
+    public function isClient(): bool
+    {
+        return $this->role === Role::Client;
+    }
+
+    // Query Scopes
+
+    public function scopeWhereSuperAdmin(Builder $query): Builder
+    {
+        return $query->where('role', Role::SuperAdmin->value);
+    }
+
+    public function scopeWherePartner(Builder $query): Builder
+    {
+        return $query->where('role', Role::Partner->value);
+    }
+
+    public function scopeWhereClient(Builder $query): Builder
+    {
+        return $query->where('role', Role::Client->value);
+    }
+
+    public function scopeWhereRole(Builder $query, Role $role): Builder
+    {
+        return $query->where('role', $role->value);
+    }
+
+    public function scopeForPartner(Builder $query, int $partnerId): Builder
+    {
+        return $query->where('partner_id', $partnerId);
     }
 }
