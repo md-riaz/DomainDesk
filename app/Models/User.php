@@ -82,6 +82,11 @@ class User extends Authenticatable
         return $this->hasMany(Domain::class, 'client_id');
     }
 
+    public function invoices(): HasMany
+    {
+        return $this->hasMany(Invoice::class, 'client_id');
+    }
+
     // Role Check Methods
 
     public function isSuperAdmin(): bool

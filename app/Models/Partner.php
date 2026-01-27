@@ -49,6 +49,16 @@ class Partner extends Model
         return $this->hasOne(PartnerDomain::class)->where('is_primary', true);
     }
 
+    public function wallet(): HasOne
+    {
+        return $this->hasOne(Wallet::class);
+    }
+
+    public function invoices(): HasMany
+    {
+        return $this->hasMany(Invoice::class);
+    }
+
     public function scopeActive($query)
     {
         return $query->where('status', 'active')->where('is_active', true);
