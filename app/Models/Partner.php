@@ -39,6 +39,11 @@ class Partner extends Model
         return $this->hasMany(User::class);
     }
 
+    public function clientDomains(): HasMany
+    {
+        return $this->hasMany(Domain::class);
+    }
+
     public function primaryDomain(): HasOne
     {
         return $this->hasOne(PartnerDomain::class)->where('is_primary', true);

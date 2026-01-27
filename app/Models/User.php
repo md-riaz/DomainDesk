@@ -69,12 +69,17 @@ class User extends Authenticatable
 
     public function partner(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'partner_id');
+        return $this->belongsTo(Partner::class, 'partner_id');
     }
 
     public function clients(): HasMany
     {
         return $this->hasMany(User::class, 'partner_id');
+    }
+
+    public function domains(): HasMany
+    {
+        return $this->hasMany(Domain::class, 'client_id');
     }
 
     // Role Check Methods
