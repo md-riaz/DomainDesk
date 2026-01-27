@@ -22,7 +22,7 @@ return new class extends Migration
             $table->timestamp('verified_at')->nullable();
             $table->timestamp('ssl_issued_at')->nullable();
             $table->timestamps();
-            
+
             $table->index(['partner_id', 'is_primary']);
             $table->index(['dns_status', 'is_verified']);
         });

@@ -17,11 +17,11 @@ class PartnerFactory extends Factory
     public function definition(): array
     {
         $name = fake()->company();
-        
+
         return [
             'name' => $name,
             'email' => fake()->unique()->companyEmail(),
-            'slug' => \Illuminate\Support\Str::slug($name) . '-' . fake()->unique()->numberBetween(1000, 9999),
+            'slug' => \Illuminate\Support\Str::slug($name).'-'.fake()->unique()->numberBetween(1000, 9999),
             'status' => fake()->randomElement(['active', 'suspended', 'pending']),
             'is_active' => fake()->boolean(80),
         ];
