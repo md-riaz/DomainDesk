@@ -24,6 +24,8 @@ class Domain extends Model
         'registered_at',
         'expires_at',
         'auto_renew',
+        'last_synced_at',
+        'sync_metadata',
     ];
 
     protected $casts = [
@@ -31,6 +33,8 @@ class Domain extends Model
         'registered_at' => 'datetime',
         'expires_at' => 'datetime',
         'auto_renew' => 'boolean',
+        'last_synced_at' => 'datetime',
+        'sync_metadata' => 'array',
     ];
 
     public function client(): BelongsTo
@@ -89,5 +93,27 @@ class Domain extends Model
     public function daysUntilExpiry(): ?int
     {
         return $this->expires_at ? now()->diffInDays($this->expires_at, false) : null;
+    }
+
+    public function needsSync(int $minHoursSinceLastSync = 6): bool
+    {
+        if (!$this->last_synced_at) {
+            return true;
+        }
+
+        return $this->last_synced_at->diffInHours(now()) >= $minHoursSinceLastSync;
+    }
+
+    public function markAsSynced(array $metadata = []): void
+    {
+        $this->update([
+            'last_synced_at' => now(),
+            'sync_metadata' => $metadata,
+        ]);
+    }
+
+    public function registrar(): BelongsTo
+    {
+        return $this->belongsTo(Registrar::class);
     }
 }
