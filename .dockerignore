@@ -1,0 +1,71 @@
+# Docker ignore file for DomainDesk
+# Exclude files from Docker build context
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+*.md
+docs/
+CONTRIBUTING.md
+LICENSE
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# PHP/Composer
+/vendor/
+composer.lock
+
+# Laravel
+/storage/*.key
+/storage/logs/*
+/storage/framework/cache/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+!/storage/app/.gitignore
+!/storage/framework/.gitignore
+!/storage/logs/.gitignore
+
+# Testing
+.phpunit.result.cache
+/coverage/
+.php_cs.cache
+
+# Build artifacts
+/public/hot
+/public/storage
+/public/build
+
+# Deployment
+docker-compose.override.yml
+docker-compose.local.yml
+
+# Database
+*.sqlite
+*.sqlite-journal
+database/database.sqlite
+
+# Misc
+*.log
+.php-cs-fixer.cache

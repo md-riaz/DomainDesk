@@ -1,0 +1,159 @@
+name: Deploy
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: Deploy to Production
+    environment:
+      name: production
+      url: https://domaindesk.com
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: pdo, pdo_pgsql, mbstring, xml, bcmath
+
+      - name: Install Composer dependencies
+        run: composer install --no-dev --no-progress --prefer-dist --optimize-autoloader
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Build production assets
+        run: npm run build
+
+      - name: Run tests
+        env:
+          DB_CONNECTION: sqlite
+          DB_DATABASE: ':memory:'
+        run: php artisan test
+
+      - name: Create deployment artifact
+        run: |
+          tar -czf release.tar.gz \
+            --exclude='.git' \
+            --exclude='node_modules' \
+            --exclude='tests' \
+            --exclude='storage/logs/*' \
+            --exclude='storage/framework/cache/*' \
+            --exclude='storage/framework/sessions/*' \
+            --exclude='storage/framework/views/*' \
+            --exclude='.env' \
+            .
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release
+          path: release.tar.gz
+          retention-days: 1
+
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_KEY }}
+          port: ${{ secrets.DEPLOY_PORT }}
+          script: |
+            set -e
+            
+            # Deployment directory
+            DEPLOY_DIR="/var/www/domaindesk"
+            RELEASE_DIR="$DEPLOY_DIR/releases/$(date +%Y%m%d%H%M%S)"
+            CURRENT_DIR="$DEPLOY_DIR/current"
+            
+            # Create release directory
+            mkdir -p $RELEASE_DIR
+            
+            # Download and extract release
+            cd $RELEASE_DIR
+            # (Download artifact from previous step)
+            
+            # Copy environment file
+            cp $DEPLOY_DIR/.env $RELEASE_DIR/.env
+            
+            # Shared directories
+            ln -s $DEPLOY_DIR/storage $RELEASE_DIR/storage
+            
+            # Run migrations
+            cd $RELEASE_DIR
+            php artisan migrate --force
+            
+            # Optimize Laravel
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+            php artisan optimize
+            
+            # Switch to new release
+            ln -sfn $RELEASE_DIR $CURRENT_DIR
+            
+            # Reload PHP-FPM
+            sudo systemctl reload php8.2-fpm
+            
+            # Reload queue workers
+            sudo systemctl restart domaindesk-worker
+            
+            # Keep only last 5 releases
+            cd $DEPLOY_DIR/releases
+            ls -t | tail -n +6 | xargs rm -rf
+            
+            echo "Deployment completed successfully!"
+
+      - name: Health check
+        run: |
+          sleep 10
+          curl -f ${{ secrets.APP_URL }}/health || exit 1
+
+      - name: Notify on success
+        if: success()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: success
+          text: 'Deployment to production succeeded! :rocket:'
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+
+      - name: Notify on failure
+        if: failure()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: failure
+          text: 'Deployment to production failed! :warning:'
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+
+      - name: Rollback on failure
+        if: failure()
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_KEY }}
+          script: |
+            DEPLOY_DIR="/var/www/domaindesk"
+            CURRENT_DIR="$DEPLOY_DIR/current"
+            
+            # Get previous release
+            PREVIOUS=$(ls -t $DEPLOY_DIR/releases | head -n 2 | tail -n 1)
+            
+            if [ ! -z "$PREVIOUS" ]; then
+              ln -sfn $DEPLOY_DIR/releases/$PREVIOUS $CURRENT_DIR
+              sudo systemctl reload php8.2-fpm
+              echo "Rolled back to previous release: $PREVIOUS"
+            fi

@@ -41,4 +41,34 @@ class UserFactory extends Factory
             'email_verified_at' => null,
         ]);
     }
+
+    /**
+     * Create a client user.
+     */
+    public function client(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => \App\Enums\Role::Client,
+        ]);
+    }
+
+    /**
+     * Create a partner user.
+     */
+    public function partner(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => \App\Enums\Role::Partner,
+        ]);
+    }
+
+    /**
+     * Create a super admin user.
+     */
+    public function superAdmin(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => \App\Enums\Role::SuperAdmin,
+        ]);
+    }
 }

@@ -2,7 +2,49 @@
 
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Schedule;
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
+
+// Domain Sync Scheduler
+Schedule::command('domain:sync-status --days=30 --limit=200')
+    ->dailyAt('02:00')
+    ->name('sync-expiring-domains-status')
+    ->withoutOverlapping()
+    ->runInBackground();
+
+Schedule::command('domain:sync --limit=500')
+    ->weekly()
+    ->sundays()
+    ->at('03:00')
+    ->name('weekly-full-domain-sync')
+    ->withoutOverlapping()
+    ->runInBackground();
+
+Schedule::command('tld:sync-prices')
+    ->dailyAt('04:00')
+    ->name('daily-tld-price-sync')
+    ->withoutOverlapping()
+    ->runInBackground();
+
+// Domain Renewal Scheduler
+Schedule::command('domain:process-auto-renewals --lead-time=7')
+    ->dailyAt('02:00')
+    ->name('process-auto-renewals')
+    ->withoutOverlapping()
+    ->runInBackground();
+
+Schedule::command('domain:send-expiry-warnings')
+    ->dailyAt('08:00')
+    ->name('send-expiry-warnings')
+    ->withoutOverlapping()
+    ->runInBackground();
+
+// Domain Transfer Status Check
+Schedule::command('domains:check-transfer-status --limit=100')
+    ->everySixHours()
+    ->name('check-transfer-status')
+    ->withoutOverlapping()
+    ->runInBackground();

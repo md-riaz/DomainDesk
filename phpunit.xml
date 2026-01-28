@@ -31,5 +31,7 @@
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
+        <env name="PARTNER_ALLOW_MISSING" value="true"/>
+        <env name="PARTNER_USE_DEFAULT_FALLBACK" value="true"/>
     </php>
 </phpunit>
