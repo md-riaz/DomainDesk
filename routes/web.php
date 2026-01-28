@@ -46,6 +46,13 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('admin')->name('admin.')
     Route::get('/tlds', \App\Livewire\Admin\Tld\TldList::class)->name('tlds.list');
     Route::get('/tlds/{tldId}/pricing', \App\Livewire\Admin\Tld\TldPricing::class)->name('tlds.pricing');
     
+    // System routes
+    Route::get('/system/audit-logs', \App\Livewire\Admin\System\AuditLogs::class)->name('system.audit-logs');
+    Route::get('/system/settings', \App\Livewire\Admin\System\SystemSettings::class)->name('system.settings');
+    Route::get('/system/maintenance', \App\Livewire\Admin\System\MaintenanceMode::class)->name('system.maintenance');
+    Route::get('/system/health', \App\Livewire\Admin\System\SystemHealth::class)->name('system.health');
+    Route::get('/system/cache', \App\Livewire\Admin\System\CacheManagement::class)->name('system.cache');
+    
     // Partner actions
     Route::get('/partners/{partnerId}/impersonate', function ($partnerId) {
         // Double-check authorization
