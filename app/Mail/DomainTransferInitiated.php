@@ -5,6 +5,7 @@ namespace App\Mail;
 use App\Models\Domain;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
@@ -37,14 +38,18 @@ class DomainTransferInitiated extends Mailable
     {
         $branding = $this->domain->partner->branding;
         
+        $from = $branding && $branding->email_sender_email 
+            ? new Address($branding->email_sender_email, $branding->email_sender_name ?? config('app.name'))
+            : null;
+            
+        $replyTo = $branding && $branding->reply_to_email 
+            ? [new Address($branding->reply_to_email)]
+            : [];
+        
         return new Envelope(
             subject: 'Domain Transfer Initiated - ' . $this->domain->name,
-            from: $branding && $branding->email_sender_email 
-                ? [$branding->email_sender_email => $branding->email_sender_name ?? config('app.name')]
-                : null,
-            replyTo: $branding && $branding->reply_to_email 
-                ? [$branding->reply_to_email]
-                : null,
+            from: $from,
+            replyTo: $replyTo,
         );
     }
 

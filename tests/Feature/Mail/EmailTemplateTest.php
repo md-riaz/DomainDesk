@@ -56,7 +56,12 @@ class EmailTemplateTest extends TestCase
             'partner_id' => $this->partner->id,
             'invoice_number' => 'INV-001',
             'total' => 15.99,
+            'due_at' => now()->addDays(14),
+            'issued_at' => now(),
+            'paid_at' => now(),
         ]);
+        
+        $this->addInvoiceItems();
     }
 
     public function test_domain_registered_email_renders()
@@ -258,5 +263,15 @@ class EmailTemplateTest extends TestCase
         $this->assertStringContainsString('Dashboard', $html);
         $this->assertStringContainsString('Support', $html);
         $this->assertStringContainsString('Privacy', $html);
+    }
+    
+    protected function addInvoiceItems()
+    {
+        $this->invoice->items()->create([
+            'description' => 'Domain Registration - example.com',
+            'quantity' => 1,
+            'unit_price' => 15.99,
+            'total' => 15.99,
+        ]);
     }
 }

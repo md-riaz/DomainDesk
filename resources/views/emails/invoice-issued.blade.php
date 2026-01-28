@@ -119,9 +119,14 @@
         <div class="info-box">
             <h4 style="margin-top: 0;">Option 3: Account Balance</h4>
             <p style="margin-bottom: 0;">
-                @if(isset($accountBalance) && $accountBalance >= $invoice->total)
-                    You have sufficient balance in your account to pay this invoice. 
-                    Click the button above to pay using your account balance.
+                @if(isset($accountBalance))
+                    Current Balance: <strong>${{ number_format($accountBalance, 2) }}</strong><br>
+                    @if($accountBalance >= $invoice->total)
+                        You have sufficient balance in your account to pay this invoice. 
+                        Click the button above to pay using your account balance.
+                    @else
+                        Add funds to your account balance to enable automatic invoice payment.
+                    @endif
                 @else
                     Add funds to your account balance to enable automatic invoice payment.
                 @endif

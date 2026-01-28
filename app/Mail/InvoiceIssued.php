@@ -5,6 +5,7 @@ namespace App\Mail;
 use App\Models\Invoice;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
@@ -27,20 +28,24 @@ class InvoiceIssued extends Mailable
         $branding = $this->invoice->partner->branding;
         
         $subject = "New Invoice #{$this->invoice->invoice_number}";
-        if ($this->invoice->due_at->isPast()) {
+        if ($this->invoice->due_at && $this->invoice->due_at->isPast()) {
             $subject .= " - OVERDUE";
-        } elseif ($this->invoice->due_at->diffInDays(now()) <= 7) {
+        } elseif ($this->invoice->due_at && $this->invoice->due_at->diffInDays(now()) <= 7) {
             $subject .= " - Due Soon";
         }
         
+        $from = $branding && $branding->email_sender_email 
+            ? new Address($branding->email_sender_email, $branding->email_sender_name ?? config('app.name'))
+            : null;
+            
+        $replyTo = $branding && $branding->reply_to_email 
+            ? [new Address($branding->reply_to_email)]
+            : [];
+        
         return new Envelope(
             subject: $subject,
-            from: $branding && $branding->email_sender_email 
-                ? [$branding->email_sender_email => $branding->email_sender_name ?? config('app.name')]
-                : null,
-            replyTo: $branding && $branding->reply_to_email 
-                ? [$branding->reply_to_email]
-                : null,
+            from: $from,
+            replyTo: $replyTo,
         );
     }
 

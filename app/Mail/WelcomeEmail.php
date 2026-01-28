@@ -5,6 +5,7 @@ namespace App\Mail;
 use App\Models\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
@@ -29,14 +30,18 @@ class WelcomeEmail extends Mailable
             ? $branding->email_sender_name 
             : config('app.name');
         
+        $from = $branding && $branding->email_sender_email 
+            ? new Address($branding->email_sender_email, $senderName)
+            : null;
+            
+        $replyTo = $branding && $branding->reply_to_email 
+            ? [new Address($branding->reply_to_email)]
+            : [];
+        
         return new Envelope(
             subject: "Welcome to {$senderName}!",
-            from: $branding && $branding->email_sender_email 
-                ? [$branding->email_sender_email => $senderName]
-                : null,
-            replyTo: $branding && $branding->reply_to_email 
-                ? [$branding->reply_to_email]
-                : null,
+            from: $from,
+            replyTo: $replyTo,
         );
     }
 
