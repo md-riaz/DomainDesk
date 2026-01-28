@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\DomainStatus;
 use App\Models\Concerns\Auditable;
+use App\Models\Concerns\BelongsToPartner;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,7 +13,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Domain extends Model
 {
-    use HasFactory, SoftDeletes, Auditable;
+    use HasFactory, SoftDeletes, Auditable, BelongsToPartner;
 
     protected $fillable = [
         'name',
@@ -37,11 +38,6 @@ class Domain extends Model
         return $this->belongsTo(User::class, 'client_id');
     }
 
-    public function partner(): BelongsTo
-    {
-        return $this->belongsTo(Partner::class);
-    }
-
     public function contacts(): HasMany
     {
         return $this->hasMany(DomainContact::class);
@@ -60,11 +56,6 @@ class Domain extends Model
     public function documents(): HasMany
     {
         return $this->hasMany(DomainDocument::class);
-    }
-
-    public function scopeForPartner($query, int $partnerId)
-    {
-        return $query->where('partner_id', $partnerId);
     }
 
     public function scopeActive($query)

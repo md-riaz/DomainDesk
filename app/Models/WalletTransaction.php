@@ -4,13 +4,14 @@ namespace App\Models;
 
 use App\Enums\TransactionType;
 use App\Models\Concerns\Auditable;
+use App\Models\Concerns\BelongsToPartner;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class WalletTransaction extends Model
 {
-    use HasFactory, Auditable;
+    use HasFactory, Auditable, BelongsToPartner;
 
     protected $fillable = [
         'wallet_id',
@@ -45,11 +46,6 @@ class WalletTransaction extends Model
     public function wallet(): BelongsTo
     {
         return $this->belongsTo(Wallet::class);
-    }
-
-    public function partner(): BelongsTo
-    {
-        return $this->belongsTo(Partner::class);
     }
 
     public function createdBy(): BelongsTo

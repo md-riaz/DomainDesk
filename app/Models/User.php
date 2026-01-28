@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\Role;
 use App\Models\Concerns\Auditable;
+use App\Models\Concerns\BelongsToPartner;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -15,7 +16,7 @@ use Illuminate\Notifications\Notifiable;
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, SoftDeletes, Auditable;
+    use HasFactory, Notifiable, SoftDeletes, Auditable, BelongsToPartner;
 
     /**
      * The attributes that are mass assignable.
@@ -67,11 +68,6 @@ class User extends Authenticatable
     }
 
     // Relationships
-
-    public function partner(): BelongsTo
-    {
-        return $this->belongsTo(Partner::class, 'partner_id');
-    }
 
     public function clients(): HasMany
     {
@@ -125,10 +121,5 @@ class User extends Authenticatable
     public function scopeWhereRole(Builder $query, Role $role): Builder
     {
         return $query->where('role', $role->value);
-    }
-
-    public function scopeForPartner(Builder $query, int $partnerId): Builder
-    {
-        return $query->where('partner_id', $partnerId);
     }
 }

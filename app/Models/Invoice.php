@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\InvoiceStatus;
 use App\Models\Concerns\Auditable;
+use App\Models\Concerns\BelongsToPartner;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,7 +13,7 @@ use Illuminate\Support\Facades\DB;
 
 class Invoice extends Model
 {
-    use HasFactory, Auditable;
+    use HasFactory, Auditable, BelongsToPartner;
 
     protected $fillable = [
         'invoice_number',
@@ -61,11 +62,6 @@ class Invoice extends Model
                 throw new \Exception('Invoice amounts cannot be modified after being issued');
             }
         });
-    }
-
-    public function partner(): BelongsTo
-    {
-        return $this->belongsTo(Partner::class);
     }
 
     public function client(): BelongsTo
