@@ -2,113 +2,105 @@
 
 namespace App\Console\Commands;
 
-use App\Services\DomainRenewalService;
+use App\Jobs\ProcessDomainRenewalJob;
+use App\Models\Domain;
+use App\Models\Setting;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Log;
 
 class ProcessAutoRenewals extends Command
 {
-    protected $signature = 'domain:process-auto-renewals 
-                            {--lead-time=7 : Number of days before expiry to attempt renewal}
-                            {--partner= : Filter by specific partner ID}
-                            {--dry-run : Preview what would happen without making changes}';
+    protected $signature = 'domains:process-auto-renewals';
 
-    protected $description = 'Process automatic renewals for domains expiring soon';
+    protected $description = 'Process automatic domain renewals for domains expiring soon';
 
-    public function handle(DomainRenewalService $renewalService): int
+    public function handle(): int
     {
-        $leadTime = (int) $this->option('lead-time');
-        $partnerId = $this->option('partner') ? (int) $this->option('partner') : null;
-        $isDryRun = $this->option('dry-run');
+        $this->info('Processing automatic domain renewals...');
 
-        $this->info("Starting auto-renewal process...");
-        $this->info("Lead time: {$leadTime} days");
-        
-        if ($partnerId) {
-            $this->info("Partner filter: {$partnerId}");
-        }
+        $autoRenewDays = Setting::get('auto_renew_days_before_expiry', 7);
 
-        if ($isDryRun) {
-            $this->warn("DRY RUN MODE - No changes will be made");
-        }
+        $domains = Domain::active()
+            ->autoRenew()
+            ->where('expires_at', '<=', now()->addDays($autoRenewDays))
+            ->where('expires_at', '>=', now())
+            ->with(['client', 'partner.wallet', 'registrar'])
+            ->get();
 
-        $startTime = microtime(true);
+        $this->line("Found {$domains->count()} domain(s) eligible for auto-renewal");
 
-        if ($isDryRun) {
-            $results = $this->previewAutoRenewals($leadTime, $partnerId);
-        } else {
-            $results = $renewalService->processAutoRenewals($leadTime, $partnerId);
-        }
-
-        $duration = round(microtime(true) - $startTime, 2);
-
-        $this->newLine();
-        $this->info("=== Auto-Renewal Summary ===");
-        $this->info("Processed: {$results['processed']}");
-        $this->info("Succeeded: {$results['succeeded']}");
-        
-        if ($results['failed'] > 0) {
-            $this->error("Failed: {$results['failed']}");
-        } else {
-            $this->info("Failed: {$results['failed']}");
-        }
-        
-        $this->info("Duration: {$duration}s");
-        $this->newLine();
-
-        // Display detailed results if verbose
-        if ($this->output->isVerbose() && !empty($results['results'])) {
-            $this->info("=== Detailed Results ===");
-            
-            $tableData = [];
-            foreach ($results['results'] as $result) {
-                $tableData[] = [
-                    $result['domain_name'],
-                    $result['status'],
-                    $result['message'],
-                ];
-            }
-            
-            $this->table(['Domain', 'Status', 'Message'], $tableData);
-        }
-
-        // Return success if at least some renewals succeeded, or if nothing to process
-        return self::SUCCESS;
-    }
-
-    /**
-     * Preview domains that would be auto-renewed
-     */
-    protected function previewAutoRenewals(int $leadTimeDays, ?int $partnerId): array
-    {
-        $cutoffDate = now()->addDays($leadTimeDays);
-
-        $query = \App\Models\Domain::where('auto_renew', true)
-            ->where('status', \App\Enums\DomainStatus::Active)
-            ->where('expires_at', '<=', $cutoffDate)
-            ->where('expires_at', '>', now());
-
-        if ($partnerId) {
-            $query->where('partner_id', $partnerId);
-        }
-
-        $domains = $query->get();
-
-        $results = [
-            'processed' => $domains->count(),
-            'succeeded' => 0,
-            'failed' => 0,
-            'results' => [],
-        ];
+        $processed = 0;
+        $skipped = 0;
+        $failed = 0;
 
         foreach ($domains as $domain) {
-            $results['results'][] = [
-                'domain_id' => $domain->id,
-                'domain_name' => $domain->name,
-                'status' => 'preview',
-                'message' => "Would attempt renewal (expires: {$domain->expires_at->format('Y-m-d')})",
-            ];
+            try {
+                $partner = $domain->partner;
+                
+                if (!$partner || !$partner->wallet) {
+                    $this->warn("Skipping {$domain->name}: Partner or wallet not found");
+                    Log::warning("Auto-renewal skipped: No partner wallet", [
+                        'domain_id' => $domain->id,
+                        'domain_name' => $domain->name,
+                    ]);
+                    $skipped++;
+                    continue;
+                }
+
+                // Estimate renewal cost (you'd normally get this from pricing)
+                $estimatedCost = 15.00; // Placeholder
+                
+                if ($partner->wallet->balance < $estimatedCost) {
+                    $this->warn("Skipping {$domain->name}: Insufficient balance");
+                    Log::warning("Auto-renewal skipped: Insufficient balance", [
+                        'domain_id' => $domain->id,
+                        'domain_name' => $domain->name,
+                        'balance' => $partner->wallet->balance,
+                        'estimated_cost' => $estimatedCost,
+                    ]);
+                    $skipped++;
+                    continue;
+                }
+
+                // Queue the renewal job
+                ProcessDomainRenewalJob::dispatch($domain);
+                
+                $this->line("✓ Queued auto-renewal for {$domain->name}");
+                Log::info("Auto-renewal queued", [
+                    'domain_id' => $domain->id,
+                    'domain_name' => $domain->name,
+                    'expires_at' => $domain->expires_at,
+                ]);
+                
+                $processed++;
+            } catch (\Exception $e) {
+                $this->error("Failed to process {$domain->name}: {$e->getMessage()}");
+                Log::error("Auto-renewal failed", [
+                    'domain_id' => $domain->id,
+                    'domain_name' => $domain->name,
+                    'error' => $e->getMessage(),
+                ]);
+                $failed++;
+            }
         }
 
-        return $results;
+        $this->newLine();
+        $this->info("✓ Auto-renewal processing complete");
+        $this->table(
+            ['Status', 'Count'],
+            [
+                ['Processed', $processed],
+                ['Skipped', $skipped],
+                ['Failed', $failed],
+            ]
+        );
+
+        Log::info("ProcessAutoRenewals completed", [
+            'processed' => $processed,
+            'skipped' => $skipped,
+            'failed' => $failed,
+        ]);
+
+        return self::SUCCESS;
     }
 }
