@@ -76,7 +76,7 @@ class ProcessDomainRegistrationJob implements ShouldQueue
             // Update status on final failure
             if ($this->attempts() >= $this->tries) {
                 $this->domain->update([
-                    'status' => DomainStatus::RegistrationFailed,
+                    'status' => DomainStatus::Suspended, // Using Suspended as failure status
                 ]);
 
                 // Send failure email

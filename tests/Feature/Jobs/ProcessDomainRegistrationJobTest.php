@@ -33,7 +33,7 @@ class ProcessDomainRegistrationJobTest extends TestCase
             'partner_id' => $partner->id,
             'client_id' => $client->id,
             'registrar_id' => $registrar->id,
-            'status' => 'pending',
+            'status' => DomainStatus::PendingRegistration,
         ]);
 
         $job = new ProcessDomainRegistrationJob($domain);
@@ -56,7 +56,7 @@ class ProcessDomainRegistrationJobTest extends TestCase
             'partner_id' => $partner->id,
             'client_id' => $client->id,
             'registrar_id' => $registrar->id,
-            'status' => 'pending',
+            'status' => DomainStatus::PendingRegistration,
         ]);
 
         $job = new ProcessDomainRegistrationJob($domain);
@@ -77,7 +77,7 @@ class ProcessDomainRegistrationJobTest extends TestCase
             'partner_id' => $partner->id,
             'client_id' => $client->id,
             'registrar_id' => null,
-            'status' => 'pending',
+            'status' => DomainStatus::PendingRegistration,
         ]);
 
         $job = new ProcessDomainRegistrationJob($domain);
@@ -92,20 +92,24 @@ class ProcessDomainRegistrationJobTest extends TestCase
         }
 
         $domain->refresh();
-        $this->assertEquals(DomainStatus::RegistrationFailed, $domain->status);
+        $this->assertEquals(DomainStatus::Suspended, $domain->status);
     }
 
     public function test_handles_missing_client_gracefully(): void
     {
         $partner = Partner::factory()->create();
         $registrar = Registrar::factory()->create();
+        $client = User::factory()->create(['partner_id' => $partner->id, 'role' => 'client']);
         
         $domain = Domain::factory()->create([
             'partner_id' => $partner->id,
-            'client_id' => null,
+            'client_id' => $client->id,
             'registrar_id' => $registrar->id,
-            'status' => 'pending',
+            'status' => DomainStatus::PendingRegistration,
         ]);
+
+        // Delete client to simulate missing
+        $client->forceDelete();
 
         $job = new ProcessDomainRegistrationJob($domain);
         $job->handle();
@@ -126,7 +130,7 @@ class ProcessDomainRegistrationJobTest extends TestCase
             'partner_id' => $partner->id,
             'client_id' => $client->id,
             'registrar_id' => null, // Will cause failure
-            'status' => 'pending',
+            'status' => DomainStatus::PendingRegistration,
         ]);
 
         $job = new ProcessDomainRegistrationJob($domain);
