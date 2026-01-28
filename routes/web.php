@@ -2,6 +2,7 @@
 
 use App\Livewire\Auth\Login;
 use App\Livewire\Auth\Register;
+use App\Livewire\Client\Domain\RegisterDomain;
 use App\Livewire\Client\Domain\SearchDomain;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -45,4 +46,5 @@ Route::middleware(['auth', 'role:client', 'partner.context'])->prefix('client')-
     })->name('dashboard');
     
     Route::get('/domains/search', SearchDomain::class)->name('domains.search');
+    Route::get('/domains/register', RegisterDomain::class)->name('domains.register');
 });
