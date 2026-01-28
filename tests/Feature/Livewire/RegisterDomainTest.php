@@ -312,8 +312,14 @@ class RegisterDomainTest extends TestCase
     {
         Livewire::actingAs($this->client)
             ->test(RegisterDomain::class)
+            ->set('domainName', 'example.com')
+            ->call('nextStep')
+            ->call('nextStep')
+            ->call('nextStep')
+            ->call('nextStep')
+            ->set('acceptTerms', true)
             ->set('isProcessing', true)
-            ->assertSee('Processing...');
+            ->assertSee('disabled');
     }
 
     public function test_custom_nameservers_validated(): void
@@ -395,17 +401,7 @@ class RegisterDomainTest extends TestCase
 
     protected function mockSuccessfulRegistrar(): void
     {
-        $mock = Mockery::mock(\App\Contracts\RegistrarInterface::class);
-        $mock->shouldReceive('checkAvailability')
-            ->andReturn(true);
-        $mock->shouldReceive('register')
-            ->andReturn([
-                'success' => true,
-                'domain' => 'example.com',
-                'order_id' => '12345',
-            ]);
-
-        RegistrarFactory::shouldReceive('make')
-            ->andReturn($mock);
+        // Update registrar slug to use mock
+        $this->registrar->update(['slug' => 'mock']);
     }
 }

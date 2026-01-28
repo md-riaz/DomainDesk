@@ -187,18 +187,18 @@ class DomainRegistrationService
                     // Create domain nameservers
                     $this->createDomainNameservers($domain, $nameservers);
 
+                    // Link invoice item to domain (before marking invoice as paid)
+                    $invoiceItem = $invoice->items()->first();
+                    $invoiceItem->reference_type = Domain::class;
+                    $invoiceItem->reference_id = $domain->id;
+                    $invoiceItem->save();
+
                     // Step 8: Update invoice to issued/paid
                     $invoice->update([
                         'status' => InvoiceStatus::Paid,
                         'issued_at' => now(),
                         'paid_at' => now(),
                         'due_at' => now(),
-                    ]);
-
-                    // Link invoice item to domain
-                    $invoice->items()->first()->update([
-                        'reference_type' => Domain::class,
-                        'reference_id' => $domain->id,
                     ]);
 
                     // Step 9: Create audit log
@@ -257,7 +257,13 @@ class DomainRegistrationService
                         'invoice_id' => $invoice->id,
                     ]);
 
-                    throw new \Exception('Domain registration failed: ' . $e->getMessage(), 0, $e);
+                    // Return error instead of throwing to preserve wallet refund
+                    return [
+                        'success' => false,
+                        'domain' => null,
+                        'invoice' => $invoice->fresh(['items']),
+                        'message' => 'Domain registration failed: ' . $e->getMessage(),
+                    ];
                 }
             });
 
