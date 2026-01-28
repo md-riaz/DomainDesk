@@ -46,8 +46,10 @@ return [
             'default_delay_ms' => env('MOCK_DELAY_MS', 100),
             'failure_rate' => env('MOCK_FAILURE_RATE', 0), // 0-100 percentage
             'track_history' => env('MOCK_TRACK_HISTORY', true),
+            'history_limit' => env('MOCK_HISTORY_LIMIT', 100), // max operations to keep
             'state_ttl' => env('MOCK_STATE_TTL', 3600), // seconds
             'available_tlds' => [
+                // Prices in cents (e.g., 1200 = $12.00)
                 'com' => ['register' => 1200, 'renew' => 1200, 'transfer' => 1200],
                 'net' => ['register' => 1400, 'renew' => 1400, 'transfer' => 1400],
                 'org' => ['register' => 1500, 'renew' => 1500, 'transfer' => 1500],

@@ -635,6 +635,7 @@ class MockRegistrar extends AbstractRegistrar
             return;
         }
 
+        $historyLimit = $this->config['history_limit'] ?? 100;
         $history = Cache::get($this->statePrefix . 'history', []);
         $history[] = [
             'operation' => $operation,
@@ -643,9 +644,9 @@ class MockRegistrar extends AbstractRegistrar
             'timestamp' => now()->toIso8601String(),
         ];
 
-        // Keep last 100 operations
-        if (count($history) > 100) {
-            $history = array_slice($history, -100);
+        // Keep last N operations
+        if (count($history) > $historyLimit) {
+            $history = array_slice($history, -$historyLimit);
         }
 
         Cache::put($this->statePrefix . 'history', $history, $this->stateTtl);
@@ -798,8 +799,15 @@ class MockRegistrar extends AbstractRegistrar
         foreach ($contacts as $type => $data) {
             $sanitized[$type] = [
                 'name' => $data['name'] ?? '***',
-                'email' => isset($data['email']) ? '***@' . explode('@', $data['email'])[1] ?? '***' : '***',
             ];
+            
+            // Safely sanitize email
+            if (isset($data['email']) && str_contains($data['email'], '@')) {
+                $parts = explode('@', $data['email']);
+                $sanitized[$type]['email'] = '***@' . $parts[1];
+            } else {
+                $sanitized[$type]['email'] = '***';
+            }
         }
 
         return $sanitized;
