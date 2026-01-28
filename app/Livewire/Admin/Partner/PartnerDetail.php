@@ -71,6 +71,11 @@ class PartnerDetail extends Component
 
     public function impersonatePartner()
     {
+        // Double-check authorization
+        if (!auth()->user()->isSuperAdmin()) {
+            abort(403, 'Unauthorized action.');
+        }
+        
         session(['impersonating_partner_id' => $this->partner->id]);
         
         auditLog('Started impersonating partner', $this->partner);

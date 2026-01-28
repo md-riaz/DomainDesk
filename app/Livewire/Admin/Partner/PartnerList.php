@@ -79,23 +79,27 @@ class PartnerList extends Component
             ->withCount('clientDomains')
             ->get();
 
-        $csv = "Name,Email,Status,Clients,Domains,Wallet Balance,Created At\n";
+        $csv = [];
+        $csv[] = ['Name', 'Email', 'Status', 'Clients', 'Domains', 'Wallet Balance', 'Created At'];
         
         foreach ($partners as $partner) {
-            $csv .= sprintf(
-                "%s,%s,%s,%d,%d,%s,%s\n",
+            $csv[] = [
                 $partner->name,
                 $partner->email,
                 $partner->status,
                 $partner->users_count,
                 $partner->client_domains_count,
                 $partner->wallet?->balance ?? 0,
-                $partner->created_at->format('Y-m-d')
-            );
+                $partner->created_at->format('Y-m-d'),
+            ];
         }
 
         return response()->streamDownload(function () use ($csv) {
-            echo $csv;
+            $handle = fopen('php://output', 'w');
+            foreach ($csv as $row) {
+                fputcsv($handle, $row);
+            }
+            fclose($handle);
         }, 'partners-' . now()->format('Y-m-d') . '.csv');
     }
 
@@ -111,6 +115,11 @@ class PartnerList extends Component
 
     public function impersonatePartner($partnerId)
     {
+        // Double-check authorization
+        if (!auth()->user()->isSuperAdmin()) {
+            abort(403, 'Unauthorized action.');
+        }
+        
         $partner = Partner::withoutGlobalScopes()->findOrFail($partnerId);
         
         session(['impersonating_partner_id' => $partner->id]);

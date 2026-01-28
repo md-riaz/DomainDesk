@@ -27,7 +27,23 @@ class AdjustWallet extends Component
         return [
             'partnerId' => ['required', 'exists:partners,id'],
             'type' => ['required', 'in:credit,debit,adjustment'],
-            'amount' => ['required', 'numeric', 'min:0.01'],
+            'amount' => [
+                'required',
+                'numeric',
+                function ($attribute, $value, $fail) {
+                    if ($this->type === 'adjustment') {
+                        // For adjustments, allow any numeric value including negative
+                        if (!is_numeric($value)) {
+                            $fail('The amount must be a number.');
+                        }
+                    } else {
+                        // For credit/debit, require positive values
+                        if ($value <= 0) {
+                            $fail('The amount must be greater than 0.');
+                        }
+                    }
+                },
+            ],
             'reason' => ['required', 'string', 'min:10', 'max:500'],
         ];
     }

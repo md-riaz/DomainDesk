@@ -39,6 +39,11 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('admin')->name('admin.')
     
     // Partner actions
     Route::get('/partners/{partnerId}/impersonate', function ($partnerId) {
+        // Double-check authorization
+        if (!auth()->user()->isSuperAdmin()) {
+            abort(403, 'Unauthorized action.');
+        }
+        
         $partner = \App\Models\Partner::withoutGlobalScopes()->findOrFail($partnerId);
         session(['impersonating_partner_id' => $partner->id]);
         
@@ -48,6 +53,11 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('admin')->name('admin.')
     })->name('partners.impersonate');
     
     Route::get('/partners/stop-impersonate', function () {
+        // Double-check authorization
+        if (!auth()->user()->isSuperAdmin()) {
+            abort(403, 'Unauthorized action.');
+        }
+        
         $partnerId = session('impersonating_partner_id');
         
         if ($partnerId) {
