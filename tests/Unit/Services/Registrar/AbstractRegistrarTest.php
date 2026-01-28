@@ -333,6 +333,21 @@ class TestableRegistrar extends AbstractRegistrar
         return true;
     }
 
+    public function getTransferStatus(string $domain): array
+    {
+        return $this->successResponse();
+    }
+
+    public function cancelTransfer(string $domain): array
+    {
+        return $this->successResponse();
+    }
+
+    public function getAuthCode(string $domain): array
+    {
+        return $this->successResponse(['auth_code' => 'TEST-AUTH-CODE']);
+    }
+
     public function testConnection(): bool
     {
         return true;

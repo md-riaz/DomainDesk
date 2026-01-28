@@ -901,4 +901,93 @@ class ResellerClubRegistrar extends AbstractRegistrar
             }
         }
     }
+
+    /**
+     * Get transfer status.
+     */
+    public function getTransferStatus(string $domain): array
+    {
+        return $this->executeApiCall('getTransferStatus', function () use ($domain) {
+            $this->validateDomain($domain);
+
+            $params = [
+                'auth-userid' => $this->credentials['user_id'],
+                'api-key' => $this->credentials['api_key'],
+                'order-id' => $this->getDomainOrderId($domain),
+            ];
+
+            $response = $this->makeRequest('domains/transfer-status.json', 'GET', $params);
+
+            $status = strtolower($response['status'] ?? 'unknown');
+            
+            return $this->successResponse(
+                data: [
+                    'domain' => $domain,
+                    'status' => $status,
+                    'message' => $response['message'] ?? null,
+                ],
+                message: 'Transfer status retrieved'
+            );
+        }, ['domain' => $domain]);
+    }
+
+    /**
+     * Cancel transfer.
+     */
+    public function cancelTransfer(string $domain): array
+    {
+        return $this->executeApiCall('cancelTransfer', function () use ($domain) {
+            $this->validateDomain($domain);
+
+            $params = [
+                'auth-userid' => $this->credentials['user_id'],
+                'api-key' => $this->credentials['api_key'],
+                'order-id' => $this->getDomainOrderId($domain),
+            ];
+
+            $this->makeRequest('domains/cancel-transfer.json', 'POST', $params);
+
+            return $this->successResponse(
+                data: ['domain' => $domain],
+                message: 'Transfer cancelled successfully'
+            );
+        }, ['domain' => $domain]);
+    }
+
+    /**
+     * Get auth code for transfer out.
+     */
+    public function getAuthCode(string $domain): array
+    {
+        return $this->executeApiCall('getAuthCode', function () use ($domain) {
+            $this->validateDomain($domain);
+
+            $params = [
+                'auth-userid' => $this->credentials['user_id'],
+                'api-key' => $this->credentials['api_key'],
+                'order-id' => $this->getDomainOrderId($domain),
+                'options' => 'AuthCode',
+            ];
+
+            $response = $this->makeRequest('domains/auth-code.json', 'GET', $params);
+
+            return $this->successResponse(
+                data: [
+                    'domain' => $domain,
+                    'auth_code' => $response['auth-code'] ?? $response['authcode'] ?? null,
+                ],
+                message: 'Auth code retrieved'
+            );
+        }, ['domain' => $domain]);
+    }
+
+    /**
+     * Get domain order ID (helper method).
+     */
+    protected function getDomainOrderId(string $domain): ?int
+    {
+        // This would typically look up the order ID from database or API
+        // For now, we'll assume it's stored in domain metadata
+        return null;
+    }
 }
