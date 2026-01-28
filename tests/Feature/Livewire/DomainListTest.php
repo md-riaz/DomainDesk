@@ -24,6 +24,9 @@ class DomainListTest extends TestCase
 
         $this->partner = Partner::factory()->create();
         $this->client = User::factory()->client()->create(['partner_id' => $this->partner->id]);
+        
+        // Set up partner context
+        app(\App\Services\PartnerContextService::class)->setPartner($this->partner);
     }
 
     public function test_domain_list_renders_successfully()
@@ -122,15 +125,21 @@ class DomainListTest extends TestCase
 
     public function test_domain_list_sorting_by_name()
     {
-        Domain::factory()->for($this->partner)->for($this->client, 'client')->create(['name' => 'zebra.com']);
-        Domain::factory()->for($this->partner)->for($this->client, 'client')->create(['name' => 'alpha.com']);
+        Domain::factory()->for($this->partner)->for($this->client, 'client')->create([
+            'name' => 'zebra.com',
+            'status' => DomainStatus::Active,
+        ]);
+        Domain::factory()->for($this->partner)->for($this->client, 'client')->create([
+            'name' => 'alpha.com',
+            'status' => DomainStatus::Active,
+        ]);
 
         $component = Livewire::actingAs($this->client)
             ->test(DomainList::class)
             ->set('sortBy', 'name')
             ->set('sortDirection', 'asc');
 
-        $domains = $component->get('getDomains');
+        $domains = $component->viewData('domains');
         $this->assertEquals('alpha.com', $domains->first()->name);
     }
 
@@ -138,11 +147,13 @@ class DomainListTest extends TestCase
     {
         Domain::factory()->for($this->partner)->for($this->client, 'client')->create([
             'name' => 'later.com',
+            'status' => DomainStatus::Active,
             'expires_at' => now()->addDays(60),
         ]);
         
         Domain::factory()->for($this->partner)->for($this->client, 'client')->create([
             'name' => 'sooner.com',
+            'status' => DomainStatus::Active,
             'expires_at' => now()->addDays(30),
         ]);
 
@@ -151,7 +162,7 @@ class DomainListTest extends TestCase
             ->set('sortBy', 'expires_at')
             ->set('sortDirection', 'asc');
 
-        $domains = $component->get('getDomains');
+        $domains = $component->viewData('domains');
         $this->assertEquals('sooner.com', $domains->first()->name);
     }
 
@@ -159,6 +170,7 @@ class DomainListTest extends TestCase
     {
         $domain = Domain::factory()->for($this->partner)->for($this->client, 'client')->create([
             'auto_renew' => false,
+            'status' => DomainStatus::Active,
         ]);
 
         Livewire::actingAs($this->client)
@@ -170,12 +182,14 @@ class DomainListTest extends TestCase
 
     public function test_domain_list_pagination_works()
     {
-        Domain::factory()->count(25)->for($this->partner)->for($this->client, 'client')->create();
+        Domain::factory()->count(25)->for($this->partner)->for($this->client, 'client')->create([
+            'status' => DomainStatus::Active,
+        ]);
 
         $component = Livewire::actingAs($this->client)
             ->test(DomainList::class);
 
-        $domains = $component->get('getDomains');
+        $domains = $component->viewData('domains');
         $this->assertEquals(20, $domains->count());
         $this->assertEquals(25, $domains->total());
     }
@@ -202,6 +216,7 @@ class DomainListTest extends TestCase
     {
         Livewire::actingAs($this->client)
             ->test(DomainList::class)
+            ->assertSet('sortDirection', 'asc')
             ->call('sortByColumn', 'name')
             ->assertSet('sortDirection', 'asc')
             ->call('sortByColumn', 'name')
@@ -210,7 +225,9 @@ class DomainListTest extends TestCase
 
     public function test_search_resets_pagination()
     {
-        Domain::factory()->count(25)->for($this->partner)->for($this->client, 'client')->create();
+        Domain::factory()->count(25)->for($this->partner)->for($this->client, 'client')->create([
+            'status' => DomainStatus::Active,
+        ]);
 
         Livewire::actingAs($this->client)
             ->test(DomainList::class)
@@ -230,6 +247,7 @@ class DomainListTest extends TestCase
         $otherClient = User::factory()->client()->create(['partner_id' => $this->partner->id]);
         $domain = Domain::factory()->for($this->partner)->for($otherClient, 'client')->create([
             'auto_renew' => false,
+            'status' => DomainStatus::Active,
         ]);
 
         Livewire::actingAs($this->client)
