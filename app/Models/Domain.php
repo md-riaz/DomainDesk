@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\DomainStatus;
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,7 +12,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Domain extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, Auditable;
 
     protected $fillable = [
         'name',
@@ -54,6 +55,11 @@ class Domain extends Model
     public function dnsRecords(): HasMany
     {
         return $this->hasMany(DomainDnsRecord::class);
+    }
+
+    public function documents(): HasMany
+    {
+        return $this->hasMany(DomainDocument::class);
     }
 
     public function scopeForPartner($query, int $partnerId)
