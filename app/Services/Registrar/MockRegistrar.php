@@ -3,10 +3,18 @@
 namespace App\Services\Registrar;
 
 use App\Exceptions\RegistrarException;
+use Illuminate\Support\Facades\Cache;
 
 /**
- * Mock Registrar for testing purposes.
- * Returns fake responses without making actual API calls.
+ * Mock Registrar for testing and development.
+ * 
+ * Features:
+ * - Realistic fake data for all operations
+ * - Configurable delays to simulate network latency
+ * - Configurable failure rates for testing error handling
+ * - State management (stores domain data in cache)
+ * - Operation history tracking
+ * - Comprehensive validation
  */
 class MockRegistrar extends AbstractRegistrar
 {
@@ -26,6 +34,31 @@ class MockRegistrar extends AbstractRegistrar
     protected int $failureRate = 0;
 
     /**
+     * Available TLDs and their pricing.
+     */
+    protected array $availableTlds = [];
+
+    /**
+     * Unavailable domain patterns.
+     */
+    protected array $unavailablePatterns = [];
+
+    /**
+     * Cache key prefix for state storage.
+     */
+    protected string $statePrefix = 'mock_registrar:';
+
+    /**
+     * Cache TTL for domain state (in seconds).
+     */
+    protected int $stateTtl = 3600;
+
+    /**
+     * Track operation history.
+     */
+    protected bool $trackHistory = true;
+
+    /**
      * Initialize mock registrar.
      */
     protected function initialize(): void
@@ -33,6 +66,24 @@ class MockRegistrar extends AbstractRegistrar
         $this->simulateDelays = $this->config['simulate_delays'] ?? false;
         $this->defaultDelayMs = $this->config['default_delay_ms'] ?? 100;
         $this->failureRate = $this->config['failure_rate'] ?? 0;
+        $this->trackHistory = $this->config['track_history'] ?? true;
+        $this->stateTtl = $this->config['state_ttl'] ?? 3600;
+
+        // Default available TLDs with pricing
+        $this->availableTlds = $this->config['available_tlds'] ?? [
+            'com' => ['register' => 1200, 'renew' => 1200, 'transfer' => 1200],
+            'net' => ['register' => 1400, 'renew' => 1400, 'transfer' => 1400],
+            'org' => ['register' => 1500, 'renew' => 1500, 'transfer' => 1500],
+            'io' => ['register' => 3500, 'renew' => 3500, 'transfer' => 3500],
+            'app' => ['register' => 1800, 'renew' => 1800, 'transfer' => 1800],
+        ];
+
+        // Default patterns for unavailable domains
+        $this->unavailablePatterns = $this->config['unavailable_patterns'] ?? [
+            'taken.com',
+            'unavailable',
+            'registered',
+        ];
     }
 
     /**
@@ -45,8 +96,39 @@ class MockRegistrar extends AbstractRegistrar
             $this->simulateDelay();
             $this->simulateFailure();
 
-            // Mock logic: domains ending in "taken.com" are not available
-            return !str_ends_with($domain, 'taken.com');
+            // Check if TLD is supported
+            $tld = $this->extractTld($domain);
+            if (!isset($this->availableTlds[$tld])) {
+                throw RegistrarException::invalidData(
+                    $this->name,
+                    "TLD '.{$tld}' is not supported",
+                    ['domain' => $domain, 'supported_tlds' => array_keys($this->availableTlds)]
+                );
+            }
+
+            // Check unavailable patterns
+            foreach ($this->unavailablePatterns as $pattern) {
+                if (str_contains($domain, $pattern)) {
+                    return false;
+                }
+            }
+
+            // Check if domain is already registered in mock state
+            if ($this->getDomainState($domain)) {
+                return false;
+            }
+
+            // For testing: domains containing these keywords are always available
+            $alwaysAvailableKeywords = ['test', 'mock', 'demo', 'unique', 'example-', 'custom', 'lock', 'unlock'];
+            foreach ($alwaysAvailableKeywords as $keyword) {
+                if (str_contains($domain, $keyword)) {
+                    return true;
+                }
+            }
+
+            // Randomize availability for other domains (deterministic based on domain name)
+            $seed = crc32($domain) % 100;
+            return $seed < 70;
         }, ['domain' => $domain]);
     }
 
@@ -58,16 +140,54 @@ class MockRegistrar extends AbstractRegistrar
         return $this->executeApiCall('register', function () use ($data) {
             $this->validateRequired($data, ['domain', 'years', 'contacts']);
             $this->validateDomain($data['domain']);
+            $this->validateYears($data['years']);
+            $this->validateContacts($data['contacts']);
+            
+            // Validate nameservers if provided
+            if (isset($data['nameservers'])) {
+                $this->validateNameservers($data['nameservers']);
+            }
+            
             $this->simulateDelay();
             $this->simulateFailure();
+
+            // Check if domain is available
+            if (!$this->checkAvailability($data['domain'])) {
+                throw RegistrarException::invalidData(
+                    $this->name,
+                    'Domain is not available for registration',
+                    ['domain' => $data['domain']]
+                );
+            }
+
+            $orderId = 'MOCK-' . strtoupper(uniqid());
+            $expiryDate = now()->addYears($data['years']);
+            $nameservers = $data['nameservers'] ?? ['ns1.example.com', 'ns2.example.com'];
+
+            // Store domain state
+            $domainState = [
+                'domain' => $data['domain'],
+                'status' => 'active',
+                'order_id' => $orderId,
+                'registered_at' => now()->toIso8601String(),
+                'expiry_date' => $expiryDate->toIso8601String(),
+                'auto_renew' => $data['auto_renew'] ?? false,
+                'locked' => true,
+                'nameservers' => $nameservers,
+                'contacts' => $data['contacts'],
+            ];
+            
+            $this->saveDomainState($data['domain'], $domainState);
+            $this->logOperation('register', $data['domain'], $domainState);
 
             return $this->successResponse(
                 data: [
                     'domain' => $data['domain'],
-                    'order_id' => 'MOCK-' . time(),
+                    'order_id' => $orderId,
                     'status' => 'active',
-                    'expiry_date' => now()->addYears($data['years'])->toIso8601String(),
+                    'expiry_date' => $expiryDate->toIso8601String(),
                     'auto_renew' => $data['auto_renew'] ?? false,
+                    'nameservers' => $nameservers,
                 ],
                 message: 'Domain registered successfully'
             );
@@ -81,15 +201,33 @@ class MockRegistrar extends AbstractRegistrar
     {
         return $this->executeApiCall('renew', function () use ($domain, $years) {
             $this->validateDomain($domain);
+            $this->validateYears($years);
             $this->simulateDelay();
             $this->simulateFailure();
+
+            // Check if domain exists
+            $state = $this->getDomainState($domain);
+            if (!$state) {
+                throw RegistrarException::domainNotFound($this->name, $domain);
+            }
+
+            $orderId = 'MOCK-RENEW-' . strtoupper(uniqid());
+            $currentExpiry = \Carbon\Carbon::parse($state['expiry_date']);
+            $newExpiry = $currentExpiry->addYears($years);
+
+            // Update domain state
+            $state['expiry_date'] = $newExpiry->toIso8601String();
+            $state['renewed_at'] = now()->toIso8601String();
+            $this->saveDomainState($domain, $state);
+            $this->logOperation('renew', $domain, ['years' => $years, 'new_expiry' => $newExpiry->toIso8601String()]);
 
             return $this->successResponse(
                 data: [
                     'domain' => $domain,
-                    'order_id' => 'MOCK-RENEW-' . time(),
+                    'order_id' => $orderId,
                     'years_renewed' => $years,
-                    'new_expiry_date' => now()->addYears($years)->toIso8601String(),
+                    'previous_expiry_date' => $currentExpiry->toIso8601String(),
+                    'new_expiry_date' => $newExpiry->toIso8601String(),
                 ],
                 message: 'Domain renewed successfully'
             );
@@ -106,16 +244,41 @@ class MockRegistrar extends AbstractRegistrar
             $this->simulateDelay();
             $this->simulateFailure();
 
+            if (empty($authCode)) {
+                throw RegistrarException::invalidData(
+                    $this->name,
+                    'Authorization code is required for transfer',
+                    ['domain' => $domain]
+                );
+            }
+
+            $transferId = 'MOCK-TRANSFER-' . strtoupper(uniqid());
+            $estimatedCompletion = now()->addDays(5);
+
+            // Create transfer state (pending)
+            $transferState = [
+                'domain' => $domain,
+                'transfer_id' => $transferId,
+                'status' => 'pending',
+                'initiated_at' => now()->toIso8601String(),
+                'estimated_completion' => $estimatedCompletion->toIso8601String(),
+                'auth_code' => $authCode,
+            ];
+
+            $this->saveTransferState($domain, $transferState);
+            $this->logOperation('transfer', $domain, $transferState);
+
             return $this->successResponse(
                 data: [
                     'domain' => $domain,
-                    'transfer_id' => 'MOCK-TRANSFER-' . time(),
+                    'transfer_id' => $transferId,
                     'status' => 'pending',
-                    'estimated_completion' => now()->addDays(5)->toIso8601String(),
+                    'initiated_at' => now()->toIso8601String(),
+                    'estimated_completion' => $estimatedCompletion->toIso8601String(),
                 ],
                 message: 'Domain transfer initiated'
             );
-        }, ['domain' => $domain, 'auth_code' => $authCode]);
+        }, ['domain' => $domain, 'auth_code' => '***']);
     }
 
     /**
@@ -125,8 +288,21 @@ class MockRegistrar extends AbstractRegistrar
     {
         return $this->executeApiCall('updateNameservers', function () use ($domain, $nameservers) {
             $this->validateDomain($domain);
+            $this->validateNameservers($nameservers);
             $this->simulateDelay();
             $this->simulateFailure();
+
+            // Check if domain exists
+            $state = $this->getDomainState($domain);
+            if (!$state) {
+                throw RegistrarException::domainNotFound($this->name, $domain);
+            }
+
+            // Update nameservers in state
+            $state['nameservers'] = $nameservers;
+            $state['nameservers_updated_at'] = now()->toIso8601String();
+            $this->saveDomainState($domain, $state);
+            $this->logOperation('updateNameservers', $domain, ['nameservers' => $nameservers]);
 
             return $this->successResponse(
                 data: [
@@ -149,13 +325,17 @@ class MockRegistrar extends AbstractRegistrar
             $this->simulateDelay();
             $this->simulateFailure();
 
+            // Try to get from state, otherwise return mock data
+            $state = $this->getDomainState($domain);
+            $contacts = $state['contacts'] ?? [
+                'registrant' => $this->getMockContact('registrant'),
+                'admin' => $this->getMockContact('admin'),
+                'tech' => $this->getMockContact('tech'),
+                'billing' => $this->getMockContact('billing'),
+            ];
+
             return $this->successResponse(
-                data: [
-                    'registrant' => $this->getMockContact('registrant'),
-                    'admin' => $this->getMockContact('admin'),
-                    'tech' => $this->getMockContact('tech'),
-                    'billing' => $this->getMockContact('billing'),
-                ],
+                data: $contacts,
                 message: 'Contacts retrieved successfully'
             );
         }, ['domain' => $domain]);
@@ -168,18 +348,31 @@ class MockRegistrar extends AbstractRegistrar
     {
         return $this->executeApiCall('updateContacts', function () use ($domain, $contacts) {
             $this->validateDomain($domain);
+            $this->validateContacts($contacts);
             $this->simulateDelay();
             $this->simulateFailure();
+
+            // Check if domain exists
+            $state = $this->getDomainState($domain);
+            if (!$state) {
+                throw RegistrarException::domainNotFound($this->name, $domain);
+            }
+
+            // Update contacts in state
+            $state['contacts'] = array_merge($state['contacts'] ?? [], $contacts);
+            $state['contacts_updated_at'] = now()->toIso8601String();
+            $this->saveDomainState($domain, $state);
+            $this->logOperation('updateContacts', $domain, ['contact_types' => array_keys($contacts)]);
 
             return $this->successResponse(
                 data: [
                     'domain' => $domain,
-                    'contacts' => $contacts,
+                    'contacts' => $state['contacts'],
                     'updated_at' => now()->toIso8601String(),
                 ],
                 message: 'Contacts updated successfully'
             );
-        }, ['domain' => $domain, 'contacts' => $contacts]);
+        }, ['domain' => $domain, 'contacts' => $this->sanitizeContactsForLog($contacts)]);
     }
 
     /**
@@ -192,13 +385,17 @@ class MockRegistrar extends AbstractRegistrar
             $this->simulateDelay();
             $this->simulateFailure();
 
+            // Try to get from state, otherwise return mock data
+            $state = $this->getDomainState($domain);
+            $records = $state['dns_records'] ?? [
+                ['type' => 'A', 'name' => '@', 'value' => '192.0.2.1', 'ttl' => 3600],
+                ['type' => 'A', 'name' => 'www', 'value' => '192.0.2.1', 'ttl' => 3600],
+                ['type' => 'MX', 'name' => '@', 'value' => 'mail.example.com', 'priority' => 10, 'ttl' => 3600],
+                ['type' => 'TXT', 'name' => '@', 'value' => 'v=spf1 include:_spf.example.com ~all', 'ttl' => 3600],
+            ];
+
             return $this->successResponse(
-                data: [
-                    'records' => [
-                        ['type' => 'A', 'name' => '@', 'value' => '192.0.2.1', 'ttl' => 3600],
-                        ['type' => 'MX', 'name' => '@', 'value' => 'mail.example.com', 'priority' => 10, 'ttl' => 3600],
-                    ],
-                ],
+                data: ['records' => $records],
                 message: 'DNS records retrieved successfully'
             );
         }, ['domain' => $domain]);
@@ -211,8 +408,21 @@ class MockRegistrar extends AbstractRegistrar
     {
         return $this->executeApiCall('updateDnsRecords', function () use ($domain, $records) {
             $this->validateDomain($domain);
+            $this->validateDnsRecords($records);
             $this->simulateDelay();
             $this->simulateFailure();
+
+            // Check if domain exists
+            $state = $this->getDomainState($domain);
+            if (!$state) {
+                throw RegistrarException::domainNotFound($this->name, $domain);
+            }
+
+            // Update DNS records in state
+            $state['dns_records'] = $records;
+            $state['dns_updated_at'] = now()->toIso8601String();
+            $this->saveDomainState($domain, $state);
+            $this->logOperation('updateDnsRecords', $domain, ['record_count' => count($records)]);
 
             return $this->successResponse(
                 data: [
@@ -235,6 +445,17 @@ class MockRegistrar extends AbstractRegistrar
             $this->simulateDelay();
             $this->simulateFailure();
 
+            // Try to get from state, otherwise return mock data
+            $state = $this->getDomainState($domain);
+            
+            if ($state) {
+                return $this->successResponse(
+                    data: $state,
+                    message: 'Domain information retrieved successfully'
+                );
+            }
+
+            // Return mock data for unregistered domains
             return $this->successResponse(
                 data: [
                     'domain' => $domain,
@@ -261,6 +482,16 @@ class MockRegistrar extends AbstractRegistrar
             $this->simulateDelay();
             $this->simulateFailure();
 
+            // Update lock status in state
+            $state = $this->getDomainState($domain);
+            if ($state) {
+                $state['locked'] = true;
+                $state['locked_at'] = now()->toIso8601String();
+                $this->saveDomainState($domain, $state);
+            }
+            
+            $this->logOperation('lock', $domain, ['locked' => true]);
+
             return true;
         }, ['domain' => $domain]);
     }
@@ -274,6 +505,16 @@ class MockRegistrar extends AbstractRegistrar
             $this->validateDomain($domain);
             $this->simulateDelay();
             $this->simulateFailure();
+
+            // Update lock status in state
+            $state = $this->getDomainState($domain);
+            if ($state) {
+                $state['locked'] = false;
+                $state['unlocked_at'] = now()->toIso8601String();
+                $this->saveDomainState($domain, $state);
+            }
+            
+            $this->logOperation('unlock', $domain, ['locked' => false]);
 
             return true;
         }, ['domain' => $domain]);
@@ -342,5 +583,225 @@ class MockRegistrar extends AbstractRegistrar
             'zip' => '12345',
             'country' => 'US',
         ];
+    }
+
+    /**
+     * Extract TLD from domain.
+     */
+    protected function extractTld(string $domain): string
+    {
+        $parts = explode('.', $domain);
+        return end($parts);
+    }
+
+    /**
+     * Get domain state from cache.
+     */
+    protected function getDomainState(string $domain): ?array
+    {
+        return Cache::get($this->statePrefix . 'domain:' . $domain);
+    }
+
+    /**
+     * Save domain state to cache.
+     */
+    protected function saveDomainState(string $domain, array $state): void
+    {
+        Cache::put($this->statePrefix . 'domain:' . $domain, $state, $this->stateTtl);
+    }
+
+    /**
+     * Get transfer state from cache.
+     */
+    protected function getTransferState(string $domain): ?array
+    {
+        return Cache::get($this->statePrefix . 'transfer:' . $domain);
+    }
+
+    /**
+     * Save transfer state to cache.
+     */
+    protected function saveTransferState(string $domain, array $state): void
+    {
+        Cache::put($this->statePrefix . 'transfer:' . $domain, $state, $this->stateTtl);
+    }
+
+    /**
+     * Log operation to history.
+     */
+    protected function logOperation(string $operation, string $domain, array $data): void
+    {
+        if (!$this->trackHistory) {
+            return;
+        }
+
+        $history = Cache::get($this->statePrefix . 'history', []);
+        $history[] = [
+            'operation' => $operation,
+            'domain' => $domain,
+            'data' => $data,
+            'timestamp' => now()->toIso8601String(),
+        ];
+
+        // Keep last 100 operations
+        if (count($history) > 100) {
+            $history = array_slice($history, -100);
+        }
+
+        Cache::put($this->statePrefix . 'history', $history, $this->stateTtl);
+    }
+
+    /**
+     * Get operation history.
+     */
+    public function getOperationHistory(?string $domain = null): array
+    {
+        $history = Cache::get($this->statePrefix . 'history', []);
+
+        if ($domain) {
+            return array_filter($history, fn($item) => $item['domain'] === $domain);
+        }
+
+        return $history;
+    }
+
+    /**
+     * Clear all mock state.
+     */
+    public function clearState(): void
+    {
+        Cache::forget($this->statePrefix . 'history');
+        
+        // Clear all domain states (this is a simplified approach)
+        // In production, you might want to track all keys or use cache tags
+    }
+
+    /**
+     * Validate years parameter.
+     */
+    protected function validateYears(int $years): void
+    {
+        if ($years < 1 || $years > 10) {
+            throw RegistrarException::invalidData(
+                $this->name,
+                'Years must be between 1 and 10',
+                ['years' => $years]
+            );
+        }
+    }
+
+    /**
+     * Validate nameservers (must be 2-4 nameservers).
+     */
+    protected function validateNameservers(array $nameservers): void
+    {
+        $count = count($nameservers);
+        
+        if ($count < 2 || $count > 4) {
+            throw RegistrarException::invalidData(
+                $this->name,
+                'Must provide between 2 and 4 nameservers',
+                ['provided' => $count, 'nameservers' => $nameservers]
+            );
+        }
+
+        foreach ($nameservers as $ns) {
+            if (!preg_match('/^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)*$/i', $ns)) {
+                throw RegistrarException::invalidData(
+                    $this->name,
+                    'Invalid nameserver format',
+                    ['nameserver' => $ns]
+                );
+            }
+        }
+    }
+
+    /**
+     * Validate contacts data.
+     */
+    protected function validateContacts(array $contacts): void
+    {
+        $requiredTypes = ['registrant'];
+        $validTypes = ['registrant', 'admin', 'tech', 'billing'];
+
+        foreach ($requiredTypes as $type) {
+            if (!isset($contacts[$type])) {
+                throw RegistrarException::invalidData(
+                    $this->name,
+                    "Missing required contact type: {$type}",
+                    ['provided_types' => array_keys($contacts)]
+                );
+            }
+        }
+
+        foreach ($contacts as $type => $data) {
+            if (!in_array($type, $validTypes)) {
+                throw RegistrarException::invalidData(
+                    $this->name,
+                    "Invalid contact type: {$type}",
+                    ['valid_types' => $validTypes]
+                );
+            }
+
+            if (!is_array($data)) {
+                throw RegistrarException::invalidData(
+                    $this->name,
+                    "Contact data must be an array for type: {$type}",
+                    ['type' => $type]
+                );
+            }
+        }
+    }
+
+    /**
+     * Validate DNS records.
+     */
+    protected function validateDnsRecords(array $records): void
+    {
+        $validTypes = ['A', 'AAAA', 'CNAME', 'MX', 'TXT', 'NS', 'SRV', 'CAA'];
+
+        foreach ($records as $index => $record) {
+            if (!isset($record['type'], $record['name'], $record['value'])) {
+                throw RegistrarException::invalidData(
+                    $this->name,
+                    'DNS record must have type, name, and value',
+                    ['index' => $index, 'record' => $record]
+                );
+            }
+
+            if (!in_array($record['type'], $validTypes)) {
+                throw RegistrarException::invalidData(
+                    $this->name,
+                    "Invalid DNS record type: {$record['type']}",
+                    ['valid_types' => $validTypes]
+                );
+            }
+
+            // Validate MX records have priority
+            if ($record['type'] === 'MX' && !isset($record['priority'])) {
+                throw RegistrarException::invalidData(
+                    $this->name,
+                    'MX records must have a priority',
+                    ['record' => $record]
+                );
+            }
+        }
+    }
+
+    /**
+     * Sanitize contacts for logging (remove sensitive data).
+     */
+    protected function sanitizeContactsForLog(array $contacts): array
+    {
+        $sanitized = [];
+        
+        foreach ($contacts as $type => $data) {
+            $sanitized[$type] = [
+                'name' => $data['name'] ?? '***',
+                'email' => isset($data['email']) ? '***@' . explode('@', $data['email'])[1] ?? '***' : '***',
+            ];
+        }
+
+        return $sanitized;
     }
 }

@@ -43,8 +43,26 @@ return [
             'api_url' => env('MOCK_REGISTRAR_URL', 'https://api.mock-registrar.test'),
             'enable_logging' => true,
             'simulate_delays' => env('MOCK_SIMULATE_DELAYS', false),
-            'default_delay_ms' => 100,
+            'default_delay_ms' => env('MOCK_DELAY_MS', 100),
             'failure_rate' => env('MOCK_FAILURE_RATE', 0), // 0-100 percentage
+            'track_history' => env('MOCK_TRACK_HISTORY', true),
+            'state_ttl' => env('MOCK_STATE_TTL', 3600), // seconds
+            'available_tlds' => [
+                'com' => ['register' => 1200, 'renew' => 1200, 'transfer' => 1200],
+                'net' => ['register' => 1400, 'renew' => 1400, 'transfer' => 1400],
+                'org' => ['register' => 1500, 'renew' => 1500, 'transfer' => 1500],
+                'io' => ['register' => 3500, 'renew' => 3500, 'transfer' => 3500],
+                'app' => ['register' => 1800, 'renew' => 1800, 'transfer' => 1800],
+                'dev' => ['register' => 1500, 'renew' => 1500, 'transfer' => 1500],
+                'co' => ['register' => 2000, 'renew' => 2000, 'transfer' => 2000],
+                'me' => ['register' => 1800, 'renew' => 1800, 'transfer' => 1800],
+            ],
+            'unavailable_patterns' => [
+                'taken.com',
+                'unavailable',
+                'registered',
+                'reserved',
+            ],
         ],
 
         'resellerclub' => [
