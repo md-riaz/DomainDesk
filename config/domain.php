@@ -3,6 +3,28 @@
 return [
     /*
     |--------------------------------------------------------------------------
+    | Domain Search Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Configuration for domain search and availability checking.
+    |
+    */
+    'search' => [
+        /*
+         * Cache TTL for domain availability checks (in seconds)
+         * Default: 30 seconds
+         */
+        'cache_ttl' => env('DOMAIN_SEARCH_CACHE_TTL', 30),
+
+        /*
+         * Maximum number of domains that can be searched at once
+         * Default: 20
+         */
+        'max_bulk_search' => env('DOMAIN_SEARCH_MAX_BULK', 20),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Domain Sync Interval
     |--------------------------------------------------------------------------
     |

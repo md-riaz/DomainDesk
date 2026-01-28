@@ -10,6 +10,16 @@ use Livewire\Component;
 
 class SearchDomain extends Component
 {
+    /**
+     * Rate limit: maximum attempts per window
+     */
+    const RATE_LIMIT_ATTEMPTS = 10;
+
+    /**
+     * Rate limit: window in seconds (1 minute)
+     */
+    const RATE_LIMIT_DECAY = 60;
+
     #[Validate('required|string|min:3|max:1000')]
     public string $searchQuery = '';
 
@@ -30,16 +40,16 @@ class SearchDomain extends Component
      */
     public function search()
     {
-        // Rate limiting
-        $key = 'domain-search:' . (Auth::id() ?? request()->ip());
+        // Rate limiting - only authenticated users can access this route
+        $key = 'domain-search:' . Auth::id();
         
-        if (RateLimiter::tooManyAttempts($key, 10)) {
+        if (RateLimiter::tooManyAttempts($key, self::RATE_LIMIT_ATTEMPTS)) {
             $seconds = RateLimiter::availableIn($key);
             $this->errorMessage = "Too many searches. Please try again in {$seconds} seconds.";
             return;
         }
 
-        RateLimiter::hit($key, 60); // 10 attempts per minute
+        RateLimiter::hit($key, self::RATE_LIMIT_DECAY);
 
         // Validate
         $this->validate();

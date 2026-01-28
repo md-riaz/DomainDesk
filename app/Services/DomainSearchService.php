@@ -13,16 +13,6 @@ use Illuminate\Support\Facades\Log;
 class DomainSearchService
 {
     /**
-     * Cache TTL for availability checks (30 seconds)
-     */
-    const CACHE_TTL = 30;
-
-    /**
-     * Maximum number of domains to check at once
-     */
-    const MAX_BULK_SEARCH = 20;
-
-    /**
      * Alternative TLDs to suggest when domain is taken
      */
     const SUGGESTION_TLDS = [
@@ -32,6 +22,22 @@ class DomainSearchService
     public function __construct(
         protected PricingService $pricingService
     ) {}
+
+    /**
+     * Get cache TTL from configuration or use default (30 seconds)
+     */
+    protected function getCacheTtl(): int
+    {
+        return config('domain.search.cache_ttl', 30);
+    }
+
+    /**
+     * Get max bulk search limit from configuration or use default (20)
+     */
+    protected function getMaxBulkSearch(): int
+    {
+        return config('domain.search.max_bulk_search', 20);
+    }
 
     /**
      * Parse domain input and extract domain name and TLD
@@ -53,7 +59,8 @@ class DomainSearchService
         $input = rtrim($input, '/');
         
         // Validate basic format (alphanumeric, hyphens, dots)
-        if (!preg_match('/^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*$/i', $input)) {
+        // Domain labels cannot start or end with hyphens
+        if (!preg_match('/^[a-z0-9]+([a-z0-9-]*[a-z0-9]+)*(\.[a-z0-9]+([a-z0-9-]*[a-z0-9]+)*)+$/i', $input)) {
             return null;
         }
         
@@ -164,7 +171,7 @@ class DomainSearchService
             ];
 
             // Cache result
-            Cache::put($cacheKey, $result, self::CACHE_TTL);
+            Cache::put($cacheKey, $result, $this->getCacheTtl());
 
             return $result;
 
@@ -199,10 +206,11 @@ class DomainSearchService
         $domains = is_array($domains) ? $domains : [$domains];
         
         // Limit bulk search
-        if (count($domains) > self::MAX_BULK_SEARCH) {
+        $maxBulk = $this->getMaxBulkSearch();
+        if (count($domains) > $maxBulk) {
             return [
                 'success' => false,
-                'error' => 'Too many domains. Maximum ' . self::MAX_BULK_SEARCH . ' domains per search.',
+                'error' => 'Too many domains. Maximum ' . $maxBulk . ' domains per search.',
                 'results' => [],
             ];
         }
@@ -336,10 +344,10 @@ class DomainSearchService
         // Try variations with hyphens
         if (count($suggestions) < $maxSuggestions && !str_contains($parsed['sld'], '-')) {
             $variations = [
-                'get' . $parsed['sld'],
-                'my' . $parsed['sld'],
-                $parsed['sld'] . 'app',
-                $parsed['sld'] . 'site',
+                'get-' . $parsed['sld'],
+                'my-' . $parsed['sld'],
+                $parsed['sld'] . '-app',
+                $parsed['sld'] . '-site',
             ];
 
             foreach ($variations as $variation) {
