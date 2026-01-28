@@ -24,7 +24,13 @@ return new class extends Migration
                 'grace_period',
                 'redemption',
                 'suspended',
-                'transferred_out'
+                'transferred_out',
+                'pending_transfer',
+                'transfer_in_progress',
+                'transfer_approved',
+                'transfer_completed',
+                'transfer_failed',
+                'transfer_cancelled'
             ])->default('pending_registration');
             $table->timestamp('registered_at')->nullable();
             $table->timestamp('expires_at')->nullable();

@@ -146,26 +146,22 @@ class DomainTransferService
                     'partner_id' => $partner->id,
                     'client_id' => $client->id,
                     'invoice_number' => Invoice::generateInvoiceNumber($partner->id),
-                    'status' => InvoiceStatus::Pending,
+                    'status' => InvoiceStatus::Issued,
                     'subtotal' => $transferPrice,
-                    'tax_amount' => 0,
+                    'tax' => 0,
                     'total' => $transferPrice,
-                    'due_date' => now()->addDays(7),
-                    'notes' => "Domain transfer: {$domainName}",
+                    'due_at' => now()->addDays(7),
+                    'issued_at' => now(),
                 ]);
 
                 InvoiceItem::create([
                     'invoice_id' => $invoice->id,
-                    'partner_id' => $partner->id,
                     'description' => "Domain Transfer: {$domainName} (includes 1 year renewal)",
                     'quantity' => 1,
                     'unit_price' => $transferPrice,
                     'total' => $transferPrice,
-                    'metadata' => [
-                        'domain' => $domainName,
-                        'years' => self::TRANSFER_INCLUDES_YEARS,
-                        'action' => 'transfer',
-                    ],
+                    'reference_type' => Domain::class,
+                    'reference_id' => null, // Will be set after domain is created
                 ]);
 
                 // Step 5: Debit wallet
@@ -490,11 +486,14 @@ class DomainTransferService
                     ),
                 ]);
 
-                // Find and refund invoice
+                // Find and refund invoice by checking invoice items that reference this domain
                 $invoice = Invoice::where('partner_id', $domain->partner_id)
                     ->where('client_id', $domain->client_id)
-                    ->where('notes', 'like', "%{$domain->name}%")
                     ->where('status', InvoiceStatus::Paid)
+                    ->whereHas('items', function ($query) use ($domain) {
+                        $query->where('description', 'like', "%{$domain->name}%")
+                              ->where('description', 'like', '%Transfer%');
+                    })
                     ->latest()
                     ->first();
 
