@@ -134,10 +134,10 @@
                             <div class="flex items-center space-x-4">
                                 <div class="flex-shrink-0">
                                     <span class="inline-flex items-center justify-center h-8 w-8 rounded-full 
-                                        {{ $transaction->type === 'credit' ? 'bg-green-100 dark:bg-green-900' : 'bg-red-100 dark:bg-red-900' }}">
+                                        {{ $transaction->type->value === 'credit' ? 'bg-green-100 dark:bg-green-900' : 'bg-red-100 dark:bg-red-900' }}">
                                         <span class="text-xs font-medium 
-                                            {{ $transaction->type === 'credit' ? 'text-green-800 dark:text-green-200' : 'text-red-800 dark:text-red-200' }}">
-                                            {{ $transaction->type === 'credit' ? '+' : '-' }}
+                                            {{ $transaction->type->value === 'credit' ? 'text-green-800 dark:text-green-200' : 'text-red-800 dark:text-red-200' }}">
+                                            {{ $transaction->type->value === 'credit' ? '+' : '-' }}
                                         </span>
                                     </span>
                                 </div>
@@ -150,7 +150,7 @@
                                     </p>
                                 </div>
                                 <div class="text-sm font-semibold 
-                                    {{ $transaction->type === 'credit' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                                    {{ $transaction->type->value === 'credit' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
                                     ${{ number_format($transaction->amount, 2) }}
                                 </div>
                             </div>

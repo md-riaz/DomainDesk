@@ -171,23 +171,23 @@
                             <div class="flex items-center space-x-4">
                                 <div class="flex-shrink-0">
                                     <span class="inline-flex items-center justify-center h-8 w-8 rounded-full 
-                                        {{ $transaction->type === 'credit' ? 'bg-green-100 dark:bg-green-900' : 'bg-red-100 dark:bg-red-900' }}">
+                                        {{ $transaction->type->value === 'credit' ? 'bg-green-100 dark:bg-green-900' : 'bg-red-100 dark:bg-red-900' }}">
                                         <span class="text-xs font-medium 
-                                            {{ $transaction->type === 'credit' ? 'text-green-800 dark:text-green-200' : 'text-red-800 dark:text-red-200' }}">
-                                            {{ $transaction->type === 'credit' ? '+' : '-' }}
+                                            {{ $transaction->type->value === 'credit' ? 'text-green-800 dark:text-green-200' : 'text-red-800 dark:text-red-200' }}">
+                                            {{ $transaction->type->value === 'credit' ? '+' : '-' }}
                                         </span>
                                     </span>
                                 </div>
                                 <div class="flex-1 min-w-0">
                                     <p class="text-sm font-medium text-gray-900 dark:text-white truncate">
-                                        {{ ucfirst($transaction->type) }}
+                                        {{ ucfirst($transaction->type->value) }}
                                     </p>
                                     <p class="text-sm text-gray-500 dark:text-gray-400 truncate">
                                         {{ $transaction->description }}
                                     </p>
                                 </div>
                                 <div class="text-sm font-semibold 
-                                    {{ $transaction->type === 'credit' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                                    {{ $transaction->type->value === 'credit' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
                                     ${{ number_format($transaction->amount, 2) }}
                                 </div>
                             </div>
