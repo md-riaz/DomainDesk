@@ -87,8 +87,6 @@ class TldList extends Component
         $this->dispatch('tld-updated', [
             'message' => "Activated {$count} TLD(s)"
         ]);
-        
-        auditLog("Bulk activated {$count} TLDs");
     }
 
     public function bulkDeactivate()
@@ -109,8 +107,6 @@ class TldList extends Component
         $this->dispatch('tld-updated', [
             'message' => "Deactivated {$count} TLD(s)"
         ]);
-        
-        auditLog("Bulk deactivated {$count} TLDs");
     }
 
     public function bulkAssignRegistrar($registrarId)

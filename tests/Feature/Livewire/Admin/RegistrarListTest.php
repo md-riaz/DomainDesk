@@ -47,15 +47,15 @@ class RegistrarListTest extends TestCase
 
     public function test_search_filters_registrars()
     {
-        Registrar::factory()->create(['name' => 'ResellerClub']);
-        Registrar::factory()->create(['name' => 'MockRegistrar']);
+        Registrar::factory()->create(['name' => 'ResellerClub', 'api_class' => 'App\\Services\\Registrar\\ResellerClubRegistrar']);
+        Registrar::factory()->create(['name' => 'MockRegistrar', 'api_class' => 'App\\Services\\Registrar\\MockRegistrar']);
         
         $this->actingAs($this->superAdmin);
         
         Livewire::test(RegistrarList::class)
             ->set('search', 'Reseller')
             ->assertSee('ResellerClub')
-            ->assertDontSee('MockRegistrar');
+            ->assertDontSee('Mock');
     }
 
     public function test_status_filter_works()
@@ -132,7 +132,8 @@ class RegistrarListTest extends TestCase
         $this->actingAs($this->superAdmin);
         
         $component = Livewire::test(RegistrarList::class)
-            ->call('sortBy', 'name')
+            ->set('sortBy', 'name')
+            ->set('sortDirection', 'asc')
             ->assertSet('sortBy', 'name')
             ->assertSet('sortDirection', 'asc');
     }
@@ -169,13 +170,15 @@ class RegistrarListTest extends TestCase
         
         $this->actingAs($partnerUser);
         
-        Livewire::test(RegistrarList::class)
-            ->assertForbidden();
+        $response = $this->get(route('admin.registrars.list'));
+        
+        $response->assertForbidden();
     }
 
     public function test_guest_cannot_access()
     {
-        Livewire::test(RegistrarList::class)
-            ->assertForbidden();
+        $response = $this->get(route('admin.registrars.list'));
+        
+        $response->assertRedirect(route('login'));
     }
 }

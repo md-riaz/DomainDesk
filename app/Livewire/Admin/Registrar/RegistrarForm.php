@@ -117,7 +117,6 @@ class RegistrarForm extends Component
                 'api_class' => $this->api_class,
                 'credentials' => $credentials,
                 'is_active' => $this->is_active,
-                'is_default' => $this->is_default,
             ];
             
             if ($this->registrar) {
@@ -132,6 +131,8 @@ class RegistrarForm extends Component
             
             if ($this->is_default) {
                 $this->registrar->markAsDefault();
+            } elseif (!$this->is_default && $this->registrar->is_default) {
+                $this->registrar->update(['is_default' => false]);
             }
             
             auditLog($this->registrarId ? 'Updated registrar' : 'Created registrar', $this->registrar);

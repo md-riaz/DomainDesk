@@ -194,15 +194,20 @@ class RegistrarFormTest extends TestCase
         
         $this->actingAs($this->superAdmin);
         
+        $credentials = ['api_key' => 'test'];
+        
         Livewire::test(RegistrarForm::class)
             ->set('name', 'New Default')
             ->set('api_class', 'App\\Services\\Registrar\\MockRegistrar')
-            ->set('credentialsJson', '{}')
+            ->set('credentialsJson', json_encode($credentials))
             ->set('is_default', true)
             ->call('save');
         
         $this->assertFalse($existing->fresh()->is_default);
-        $this->assertTrue(Registrar::where('name', 'New Default')->first()->is_default);
+        
+        $newRegistrar = Registrar::where('name', 'New Default')->first();
+        $this->assertNotNull($newRegistrar);
+        $this->assertTrue($newRegistrar->is_default);
     }
 
     public function test_available_classes_are_populated()
@@ -221,13 +226,15 @@ class RegistrarFormTest extends TestCase
         
         $this->actingAs($partnerUser);
         
-        Livewire::test(RegistrarForm::class)
-            ->assertForbidden();
+        $response = $this->get(route('admin.registrars.add'));
+        
+        $response->assertForbidden();
     }
 
     public function test_guest_cannot_access()
     {
-        Livewire::test(RegistrarForm::class)
-            ->assertForbidden();
+        $response = $this->get(route('admin.registrars.add'));
+        
+        $response->assertRedirect(route('login'));
     }
 }
