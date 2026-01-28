@@ -318,7 +318,7 @@ class MockRegistrar extends AbstractRegistrar
      */
     protected function simulateFailure(): void
     {
-        if ($this->failureRate > 0 && rand(1, 100) <= $this->failureRate) {
+        if ($this->failureRate > 0 && random_int(1, 100) <= $this->failureRate) {
             throw RegistrarException::connectionFailed(
                 $this->name,
                 'Simulated failure for testing'

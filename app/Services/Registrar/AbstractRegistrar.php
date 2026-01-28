@@ -308,7 +308,16 @@ abstract class AbstractRegistrar implements RegistrarInterface
             );
         }
 
-        if (!preg_match('/^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*$/i', $domain)) {
+        // Domain must contain at least one dot (require TLD)
+        if (!str_contains($domain, '.')) {
+            throw RegistrarException::invalidData(
+                $this->name,
+                'Domain must contain a TLD',
+                ['domain' => $domain]
+            );
+        }
+
+        if (!preg_match('/^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/i', $domain)) {
             throw RegistrarException::invalidData(
                 $this->name,
                 'Invalid domain name format',
@@ -329,7 +338,7 @@ abstract class AbstractRegistrar implements RegistrarInterface
         $missing = [];
 
         foreach ($required as $key) {
-            if (!isset($data[$key]) || empty($data[$key])) {
+            if (!array_key_exists($key, $data) || $data[$key] === null || $data[$key] === '') {
                 $missing[] = $key;
             }
         }
