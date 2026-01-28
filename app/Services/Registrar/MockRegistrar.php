@@ -812,4 +812,189 @@ class MockRegistrar extends AbstractRegistrar
 
         return $sanitized;
     }
+
+    /**
+     * Get transfer status.
+     */
+    public function getTransferStatus(string $domain): array
+    {
+        return $this->executeApiCall('getTransferStatus', function () use ($domain) {
+            $this->validateDomain($domain);
+            $this->simulateDelay();
+            $this->simulateFailure();
+
+            $transferState = $this->getTransferState($domain);
+            if (!$transferState) {
+                throw RegistrarException::domainNotFound($this->name, "Transfer not found for: {$domain}");
+            }
+
+            // Simulate transfer progress over time
+            $initiatedAt = \Carbon\Carbon::parse($transferState['initiated_at']);
+            $daysPassed = $initiatedAt->diffInDays(now());
+
+            // Progress transfer status based on days passed
+            if ($daysPassed >= 7) {
+                $status = 'completed';
+                $transferState['status'] = $status;
+                $transferState['completed_at'] = now()->toIso8601String();
+                
+                // Create domain state when transfer completes
+                $this->saveDomainState($domain, [
+                    'domain' => $domain,
+                    'status' => 'active',
+                    'registered_at' => $transferState['initiated_at'],
+                    'expiry_date' => now()->addYear()->toIso8601String(),
+                    'locked' => true,
+                    'auto_renew' => false,
+                    'nameservers' => ['ns1.example.com', 'ns2.example.com'],
+                ]);
+                
+                $this->deleteTransferState($domain);
+            } elseif ($daysPassed >= 4) {
+                $status = 'approved';
+                $transferState['status'] = $status;
+            } elseif ($daysPassed >= 2) {
+                $status = 'in_progress';
+                $transferState['status'] = $status;
+            } else {
+                $status = $transferState['status'];
+            }
+
+            $this->saveTransferState($domain, $transferState);
+
+            return $this->successResponse(
+                data: [
+                    'domain' => $domain,
+                    'status' => $status,
+                    'transfer_id' => $transferState['transfer_id'] ?? null,
+                    'initiated_at' => $transferState['initiated_at'] ?? null,
+                    'completed_at' => $transferState['completed_at'] ?? null,
+                    'estimated_completion' => $transferState['estimated_completion'] ?? null,
+                    'message' => $this->getTransferStatusMessage($status),
+                ],
+                message: 'Transfer status retrieved'
+            );
+        }, ['domain' => $domain]);
+    }
+
+    /**
+     * Cancel transfer.
+     */
+    public function cancelTransfer(string $domain): array
+    {
+        return $this->executeApiCall('cancelTransfer', function () use ($domain) {
+            $this->validateDomain($domain);
+            $this->simulateDelay();
+            $this->simulateFailure();
+
+            $transferState = $this->getTransferState($domain);
+            if (!$transferState) {
+                throw RegistrarException::domainNotFound($this->name, "Transfer not found for: {$domain}");
+            }
+
+            // Check if transfer can be cancelled
+            $status = $transferState['status'] ?? 'pending';
+            if (in_array($status, ['completed', 'cancelled', 'failed'])) {
+                throw RegistrarException::operationFailed(
+                    $this->name,
+                    "Transfer cannot be cancelled in status: {$status}",
+                    ['domain' => $domain, 'status' => $status]
+                );
+            }
+
+            // Delete transfer state
+            $this->deleteTransferState($domain);
+            $this->logOperation('cancelTransfer', $domain, ['cancelled_at' => now()->toIso8601String()]);
+
+            return $this->successResponse(
+                data: [
+                    'domain' => $domain,
+                    'status' => 'cancelled',
+                    'cancelled_at' => now()->toIso8601String(),
+                ],
+                message: 'Transfer cancelled successfully'
+            );
+        }, ['domain' => $domain]);
+    }
+
+    /**
+     * Get auth code for transfer out.
+     */
+    public function getAuthCode(string $domain): array
+    {
+        return $this->executeApiCall('getAuthCode', function () use ($domain) {
+            $this->validateDomain($domain);
+            $this->simulateDelay();
+            $this->simulateFailure();
+
+            // Check if domain exists
+            $state = $this->getDomainState($domain);
+            if (!$state) {
+                throw RegistrarException::domainNotFound($this->name, $domain);
+            }
+
+            // Generate mock auth code
+            $authCode = 'MOCK-' . strtoupper(bin2hex(random_bytes(8)));
+
+            // Store auth code in domain state
+            $state['auth_code'] = $authCode;
+            $state['auth_code_generated_at'] = now()->toIso8601String();
+            $this->saveDomainState($domain, $state);
+
+            $this->logOperation('getAuthCode', $domain, ['generated_at' => now()->toIso8601String()]);
+
+            return $this->successResponse(
+                data: [
+                    'domain' => $domain,
+                    'auth_code' => $authCode,
+                    'generated_at' => now()->toIso8601String(),
+                    'expires_at' => now()->addDays(30)->toIso8601String(),
+                ],
+                message: 'Authorization code generated'
+            );
+        }, ['domain' => $domain]);
+    }
+
+    /**
+     * Get transfer state from cache.
+     */
+    protected function getTransferState(string $domain): ?array
+    {
+        $key = $this->statePrefix . 'transfer:' . $domain;
+        return Cache::get($key);
+    }
+
+    /**
+     * Save transfer state to cache.
+     */
+    protected function saveTransferState(string $domain, array $state): void
+    {
+        $key = $this->statePrefix . 'transfer:' . $domain;
+        Cache::put($key, $state, $this->stateTtl);
+    }
+
+    /**
+     * Delete transfer state from cache.
+     */
+    protected function deleteTransferState(string $domain): void
+    {
+        $key = $this->statePrefix . 'transfer:' . $domain;
+        Cache::forget($key);
+    }
+
+    /**
+     * Get transfer status message.
+     */
+    protected function getTransferStatusMessage(string $status): string
+    {
+        return match ($status) {
+            'pending' => 'Transfer request submitted, waiting for approval',
+            'in_progress' => 'Transfer is being processed',
+            'approved' => 'Transfer approved, completing process',
+            'completed' => 'Transfer completed successfully',
+            'failed' => 'Transfer failed',
+            'cancelled' => 'Transfer was cancelled',
+            default => 'Transfer status unknown',
+        };
+    }
 }

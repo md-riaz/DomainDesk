@@ -48,6 +48,33 @@ interface RegistrarInterface
     public function transfer(string $domain, string $authCode): array;
 
     /**
+     * Check the status of a domain transfer.
+     *
+     * @param string $domain The domain name
+     * @return array Standardized response with transfer status
+     * @throws \App\Exceptions\RegistrarException
+     */
+    public function getTransferStatus(string $domain): array;
+
+    /**
+     * Cancel a domain transfer.
+     *
+     * @param string $domain The domain name
+     * @return array Standardized response
+     * @throws \App\Exceptions\RegistrarException
+     */
+    public function cancelTransfer(string $domain): array;
+
+    /**
+     * Get/generate auth code for domain (for transfer out).
+     *
+     * @param string $domain The domain name
+     * @return array Standardized response with auth code
+     * @throws \App\Exceptions\RegistrarException
+     */
+    public function getAuthCode(string $domain): array;
+
+    /**
      * Update domain nameservers.
      *
      * @param string $domain The domain name

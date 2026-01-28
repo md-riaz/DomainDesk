@@ -26,6 +26,11 @@ class Domain extends Model
         'auto_renew',
         'last_synced_at',
         'sync_metadata',
+        'auth_code',
+        'transfer_initiated_at',
+        'transfer_completed_at',
+        'transfer_status_message',
+        'transfer_metadata',
     ];
 
     protected $casts = [
@@ -35,6 +40,9 @@ class Domain extends Model
         'auto_renew' => 'boolean',
         'last_synced_at' => 'datetime',
         'sync_metadata' => 'array',
+        'transfer_initiated_at' => 'datetime',
+        'transfer_completed_at' => 'datetime',
+        'transfer_metadata' => 'array',
     ];
 
     public function client(): BelongsTo
@@ -115,5 +123,34 @@ class Domain extends Model
     public function registrar(): BelongsTo
     {
         return $this->belongsTo(Registrar::class);
+    }
+
+    public function scopeTransferring($query)
+    {
+        return $query->whereIn('status', [
+            DomainStatus::PendingTransfer,
+            DomainStatus::TransferInProgress,
+            DomainStatus::TransferApproved,
+        ]);
+    }
+
+    public function setAuthCodeAttribute($value): void
+    {
+        $this->attributes['auth_code'] = $value ? encrypt($value) : null;
+    }
+
+    public function getAuthCodeAttribute($value): ?string
+    {
+        return $value ? decrypt($value) : null;
+    }
+
+    public function isTransferring(): bool
+    {
+        return $this->status->isTransferring();
+    }
+
+    public function canCancelTransfer(): bool
+    {
+        return $this->status->canCancelTransfer();
     }
 }

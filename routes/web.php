@@ -48,7 +48,9 @@ Route::middleware(['auth', 'role:client', 'partner.context'])->prefix('client')-
     
     Route::get('/domains/search', SearchDomain::class)->name('domains.search');
     Route::get('/domains/register', RegisterDomain::class)->name('domains.register');
+    Route::get('/domains/transfer', \App\Livewire\Client\Domain\TransferDomain::class)->name('domains.transfer');
     Route::get('/domains/{domain}/renew', RenewDomain::class)->name('domains.renew');
+    Route::get('/domains/{domain}/transfer-status', \App\Livewire\Client\Domain\TransferStatus::class)->name('domains.transfer-status');
     
     // Placeholder for domain details page (referenced in RenewDomain component)
     Route::get('/domains/{domain}', function ($domainId) {

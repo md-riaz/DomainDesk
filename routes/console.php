@@ -41,3 +41,10 @@ Schedule::command('domain:send-expiry-warnings')
     ->name('send-expiry-warnings')
     ->withoutOverlapping()
     ->runInBackground();
+
+// Domain Transfer Status Check
+Schedule::command('domains:check-transfer-status --limit=100')
+    ->everySixHours()
+    ->name('check-transfer-status')
+    ->withoutOverlapping()
+    ->runInBackground();

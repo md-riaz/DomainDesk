@@ -11,6 +11,12 @@ enum DomainStatus: string
     case Redemption = 'redemption';
     case Suspended = 'suspended';
     case TransferredOut = 'transferred_out';
+    case PendingTransfer = 'pending_transfer';
+    case TransferInProgress = 'transfer_in_progress';
+    case TransferApproved = 'transfer_approved';
+    case TransferCompleted = 'transfer_completed';
+    case TransferFailed = 'transfer_failed';
+    case TransferCancelled = 'transfer_cancelled';
 
     public function label(): string
     {
@@ -22,6 +28,12 @@ enum DomainStatus: string
             self::Redemption => 'Redemption',
             self::Suspended => 'Suspended',
             self::TransferredOut => 'Transferred Out',
+            self::PendingTransfer => 'Pending Transfer',
+            self::TransferInProgress => 'Transfer In Progress',
+            self::TransferApproved => 'Transfer Approved',
+            self::TransferCompleted => 'Transfer Completed',
+            self::TransferFailed => 'Transfer Failed',
+            self::TransferCancelled => 'Transfer Cancelled',
         };
     }
 
@@ -37,5 +49,22 @@ enum DomainStatus: string
     public function isActive(): bool
     {
         return $this === self::Active;
+    }
+
+    public function isTransferring(): bool
+    {
+        return in_array($this, [
+            self::PendingTransfer,
+            self::TransferInProgress,
+            self::TransferApproved,
+        ]);
+    }
+
+    public function canCancelTransfer(): bool
+    {
+        return in_array($this, [
+            self::PendingTransfer,
+            self::TransferInProgress,
+        ]);
     }
 }
