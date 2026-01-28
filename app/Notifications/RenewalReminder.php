@@ -33,8 +33,7 @@ class RenewalReminder extends Notification implements ShouldQueue
 
         // Add urgency-specific content
         if ($urgency === 'critical') {
-            $mail->error()
-                ->line('🚨 **CRITICAL REMINDER**')
+            $mail->line('🚨 **CRITICAL REMINDER**')
                 ->line($message);
         } elseif ($urgency === 'high') {
             $mail->line('⚠️ **IMPORTANT REMINDER**')

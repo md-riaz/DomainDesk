@@ -35,8 +35,7 @@ class LowBalanceAlert extends Notification implements ShouldQueue
             ->line("**Alert Threshold:** \$" . number_format($this->threshold, 2))
             ->line("**Percentage of Threshold:** " . number_format($percentageOfThreshold, 1) . "%")
             ->when($this->currentBalance <= 0, function ($mail) {
-                return $mail->error()
-                    ->line('🚨 **CRITICAL**: Your balance is zero or negative! Immediate top-up required.');
+                return $mail->line('🚨 **CRITICAL**: Your balance is zero or negative! Immediate top-up required.');
             })
             ->when($this->currentBalance > 0 && $this->currentBalance < ($this->threshold * 0.5), function ($mail) {
                 return $mail->line('⚠️ Your balance is below 50% of the threshold. Please consider topping up soon.');

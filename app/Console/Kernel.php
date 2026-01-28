@@ -28,9 +28,9 @@ class Kernel extends ConsoleKernel
             ->onOneServer()
             ->appendOutputTo(storage_path('logs/scheduler.log'));
 
-        // Send renewal reminders daily at 8:00 AM (after scanning)
+        // Send renewal reminders daily at 8:15 AM (staggered from scan-expiring)
         $schedule->command('domains:send-renewal-reminders')
-            ->dailyAt('08:00')
+            ->dailyAt('08:15')
             ->timezone('UTC')
             ->withoutOverlapping()
             ->onOneServer()

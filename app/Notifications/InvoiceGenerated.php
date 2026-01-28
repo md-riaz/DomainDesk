@@ -38,12 +38,11 @@ class InvoiceGenerated extends Notification implements ShouldQueue
             })
             ->when($this->invoice->status === InvoiceStatus::Issued, function ($mail) {
                 return $mail->line('Please process payment at your earliest convenience.')
-                    ->action('View Invoice', url("/invoices/{$this->invoice->id}"))
-                    ->action('Pay Now', url("/invoices/{$this->invoice->id}/pay"));
+                    ->action('View & Pay Invoice', url("/invoices/{$this->invoice->id}/pay"));
             })
             ->when($this->invoice->status === InvoiceStatus::Failed, function ($mail) {
                 return $mail->line('⚠️ The previous payment attempt **failed**. Please try again.')
-                    ->action('Pay Now', url("/invoices/{$this->invoice->id}/pay"));
+                    ->action('Retry Payment', url("/invoices/{$this->invoice->id}/pay"));
             })
             ->line('You can download the PDF invoice from your account.')
             ->line('Thank you for your business!');

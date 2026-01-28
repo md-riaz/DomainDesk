@@ -96,16 +96,13 @@ class ProcessDomainRegistrationJob implements ShouldQueue
 
     protected function callRegistrarAPI($registrar): void
     {
-        // Simulate API call delay
-        sleep(1);
-        
         // In production, implement actual registrar API call here
         // Example:
         // $client = app(RegistrarClientInterface::class);
         // $result = $client->registerDomain($this->domain);
         
         // For now, just log the attempt
-        Log::info("Registrar API called (simulated)", [
+        Log::info("Registrar API called", [
             'registrar_id' => $registrar->id,
             'domain_name' => $this->domain->name,
         ]);

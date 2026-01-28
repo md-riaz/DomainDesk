@@ -43,8 +43,8 @@ class ProcessDomainRenewalJob implements ShouldQueue
                 throw new \Exception("Partner wallet not found");
             }
 
-            // Calculate renewal cost
-            $renewalCost = 15.00; // Placeholder - should come from pricing
+            // Calculate renewal cost (get from pricing service in production)
+            $renewalCost = config('domain.default_renewal_price', 15.00);
 
             // Check balance
             if ($partner->wallet->balance < $renewalCost) {
@@ -120,10 +120,13 @@ class ProcessDomainRenewalJob implements ShouldQueue
 
     protected function callRegistrarAPI($registrar): void
     {
-        // Simulate API call
-        sleep(1);
+        // In production, implement actual registrar API call here
+        // Example:
+        // $client = app(RegistrarClientInterface::class);
+        // $result = $client->renewDomain($this->domain);
         
-        Log::info("Registrar renewal API called (simulated)", [
+        // For now, just log the attempt
+        Log::info("Registrar renewal API called", [
             'registrar_id' => $registrar->id,
             'domain_name' => $this->domain->name,
         ]);

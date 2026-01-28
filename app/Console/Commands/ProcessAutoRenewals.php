@@ -47,8 +47,8 @@ class ProcessAutoRenewals extends Command
                     continue;
                 }
 
-                // Estimate renewal cost (you'd normally get this from pricing)
-                $estimatedCost = 15.00; // Placeholder
+                // Calculate renewal cost (get from pricing service in production)
+                $estimatedCost = config('domain.default_renewal_price', 15.00);
                 
                 if ($partner->wallet->balance < $estimatedCost) {
                     $this->warn("Skipping {$domain->name}: Insufficient balance");
