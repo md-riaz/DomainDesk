@@ -29,6 +29,9 @@ class DomainManagementTest extends TestCase
             'role' => Role::Client,
             'partner_id' => $this->partner->id,
         ]);
+        
+        // Authenticate as client to allow scope to work properly
+        $this->actingAs($this->client);
     }
 
     public function test_domain_requires_client_and_partner(): void

@@ -37,12 +37,14 @@ class Partner extends Model
 
     public function users(): HasMany
     {
-        return $this->hasMany(User::class);
+        // Bypass partner scope since Partner already ensures isolation
+        return $this->hasMany(User::class)->withoutGlobalScope(\App\Scopes\PartnerScope::class);
     }
 
     public function clientDomains(): HasMany
     {
-        return $this->hasMany(Domain::class);
+        // Bypass partner scope since Partner already ensures isolation
+        return $this->hasMany(Domain::class)->withoutGlobalScope(\App\Scopes\PartnerScope::class);
     }
 
     public function primaryDomain(): HasOne
@@ -57,7 +59,8 @@ class Partner extends Model
 
     public function invoices(): HasMany
     {
-        return $this->hasMany(Invoice::class);
+        // Bypass partner scope since Partner already ensures isolation
+        return $this->hasMany(Invoice::class)->withoutGlobalScope(\App\Scopes\PartnerScope::class);
     }
 
     public function pricingRules(): HasMany

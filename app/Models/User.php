@@ -71,17 +71,20 @@ class User extends Authenticatable
 
     public function clients(): HasMany
     {
-        return $this->hasMany(User::class, 'partner_id');
+        // Bypass partner scope since relationship already filters by partner_id
+        return $this->hasMany(User::class, 'partner_id')->withoutGlobalScope(\App\Scopes\PartnerScope::class);
     }
 
     public function domains(): HasMany
     {
-        return $this->hasMany(Domain::class, 'client_id');
+        // Bypass partner scope - user's partner_id already ensures correct isolation
+        return $this->hasMany(Domain::class, 'client_id')->withoutGlobalScope(\App\Scopes\PartnerScope::class);
     }
 
     public function invoices(): HasMany
     {
-        return $this->hasMany(Invoice::class, 'client_id');
+        // Bypass partner scope - user's partner_id already ensures correct isolation  
+        return $this->hasMany(Invoice::class, 'client_id')->withoutGlobalScope(\App\Scopes\PartnerScope::class);
     }
 
     // Role Check Methods

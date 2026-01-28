@@ -28,7 +28,8 @@ class Wallet extends Model
 
     public function transactions(): HasMany
     {
-        return $this->hasMany(WalletTransaction::class);
+        // Bypass partner scope for wallet transactions since wallet already ensures partner isolation
+        return $this->hasMany(WalletTransaction::class)->withoutGlobalScope(\App\Scopes\PartnerScope::class);
     }
 
     /**
