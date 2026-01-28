@@ -37,6 +37,15 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('admin')->name('admin.')
     Route::get('/partners/add', \App\Livewire\Admin\Partner\AddPartner::class)->name('partners.add');
     Route::get('/partners/{partnerId}', \App\Livewire\Admin\Partner\PartnerDetail::class)->name('partners.show');
     
+    // Registrar routes
+    Route::get('/registrars', \App\Livewire\Admin\Registrar\RegistrarList::class)->name('registrars.list');
+    Route::get('/registrars/add', \App\Livewire\Admin\Registrar\RegistrarForm::class)->name('registrars.add');
+    Route::get('/registrars/{registrarId}', \App\Livewire\Admin\Registrar\RegistrarForm::class)->name('registrars.edit');
+    
+    // TLD routes
+    Route::get('/tlds', \App\Livewire\Admin\Tld\TldList::class)->name('tlds.list');
+    Route::get('/tlds/{tldId}/pricing', \App\Livewire\Admin\Tld\TldPricing::class)->name('tlds.pricing');
+    
     // Partner actions
     Route::get('/partners/{partnerId}/impersonate', function ($partnerId) {
         // Double-check authorization
