@@ -114,7 +114,6 @@ class BrandingSettings extends Component
     {
         $this->primaryColor = '#3B82F6';
         $this->secondaryColor = '#10B981';
-        session()->flash('message', 'Colors reset to defaults.');
     }
 
     public function togglePreview()

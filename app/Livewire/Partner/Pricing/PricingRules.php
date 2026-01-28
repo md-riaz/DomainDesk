@@ -51,6 +51,8 @@ class PricingRules extends Component
 
     public function getTldsProperty()
     {
+        $partner = currentPartner();
+        
         $query = Tld::with(['prices' => function ($q) {
             $q->where('action', 'register')
               ->where('years', 1)
@@ -63,26 +65,27 @@ class PricingRules extends Component
             $query->where('extension', 'like', '%' . $this->search . '%');
         }
 
+        // Apply filter with subquery before pagination
+        if ($this->filter === 'with_rules') {
+            $query->whereHas('pricingRules', function ($q) use ($partner) {
+                $q->where('partner_id', $partner->id)
+                  ->whereNull('duration');
+            });
+        } elseif ($this->filter === 'without_rules') {
+            $query->whereDoesntHave('pricingRules', function ($q) use ($partner) {
+                $q->where('partner_id', $partner->id)
+                  ->whereNull('duration');
+            });
+        }
+
         $tlds = $query->orderBy('extension')->paginate(20);
 
         // Load pricing rules for current partner
-        $partner = currentPartner();
         $rules = PartnerPricingRule::where('partner_id', $partner->id)
             ->whereIn('tld_id', $tlds->pluck('id'))
             ->whereNull('duration') // Only get general rules
             ->get()
             ->keyBy('tld_id');
-
-        // Apply filter
-        if ($this->filter === 'with_rules') {
-            $tlds = $tlds->filter(function ($tld) use ($rules) {
-                return $rules->has($tld->id);
-            });
-        } elseif ($this->filter === 'without_rules') {
-            $tlds = $tlds->filter(function ($tld) use ($rules) {
-                return !$rules->has($tld->id);
-            });
-        }
 
         // Attach rules to TLDs for easy access
         foreach ($tlds as $tld) {
