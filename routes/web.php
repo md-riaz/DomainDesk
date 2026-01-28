@@ -44,20 +44,20 @@ Route::middleware(['auth', 'role:partner', 'partner.context'])->prefix('partner'
 
 // Client routes (with partner context)
 Route::middleware(['auth', 'role:client', 'partner.context'])->prefix('client')->name('client.')->group(function () {
-    Route::get('/dashboard', function () {
-        return 'Client Dashboard';
-    })->name('dashboard');
+    Route::get('/dashboard', \App\Livewire\Client\Dashboard::class)->name('dashboard');
     
+    // Domain routes
+    Route::get('/domains', \App\Livewire\Client\Domain\DomainList::class)->name('domains.list');
     Route::get('/domains/search', SearchDomain::class)->name('domains.search');
     Route::get('/domains/register', RegisterDomain::class)->name('domains.register');
     Route::get('/domains/transfer', \App\Livewire\Client\Domain\TransferDomain::class)->name('domains.transfer');
+    Route::get('/domains/{domain}', \App\Livewire\Client\Domain\DomainDetail::class)->name('domains.show');
     Route::get('/domains/{domain}/renew', RenewDomain::class)->name('domains.renew');
     Route::get('/domains/{domain}/transfer-status', \App\Livewire\Client\Domain\TransferStatus::class)->name('domains.transfer-status');
     Route::get('/domains/{domain}/nameservers', ManageNameservers::class)->name('domains.nameservers');
     Route::get('/domains/{domain}/dns', ManageDns::class)->name('domains.dns');
     
-    // Placeholder for domain details page (referenced in RenewDomain component)
-    Route::get('/domains/{domain}', function ($domainId) {
-        return 'Domain Details - ID: ' . $domainId;
-    })->name('domains.show');
+    // Invoice routes
+    Route::get('/invoices', \App\Livewire\Client\Invoice\InvoiceList::class)->name('invoices.list');
+    Route::get('/invoices/{invoice}', \App\Livewire\Client\Invoice\InvoiceDetail::class)->name('invoices.show');
 });
