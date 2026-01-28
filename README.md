@@ -14,10 +14,25 @@ A comprehensive SaaS platform built with Laravel 12 and Livewire 4, enabling par
 
 ## 📸 Platform Preview
 
+### Welcome Page
+![Welcome Page](https://github.com/user-attachments/assets/0cd15aa7-9e29-444a-a4e2-d118bc0cfcbe)
+
+Laravel-powered domain reseller platform with modern, clean interface.
+
 ### Login Page
-![Login Page](https://github.com/user-attachments/assets/7c68706a-16c5-4a57-acae-f5833f1cdf32)
+![Login Page](https://github.com/user-attachments/assets/95c66635-e098-49b4-b3e2-254dbe47a816)
 
 Clean and intuitive login interface with white-label partner branding support.
+
+### Admin Dashboard
+![Admin Dashboard](https://github.com/user-attachments/assets/695e2af0-63e1-4c4f-a06f-4bb7a6f278d5)
+
+Comprehensive admin dashboard with system-wide metrics, partner management, and system health monitoring.
+
+### Partner Management
+![Partner Management](https://github.com/user-attachments/assets/1410fe7b-e273-4116-83c5-299308863f2d)
+
+Partner management interface showing all partners, their status, clients, domains, and wallet balance with filtering and sorting capabilities.
 
 ### Demo Credentials
 
