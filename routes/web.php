@@ -9,8 +9,8 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-// Guest routes (authentication)
-Route::middleware('guest')->group(function () {
+// Guest routes (authentication) - with partner context
+Route::middleware(['guest', 'partner.context'])->group(function () {
     Route::get('/login', Login::class)->name('login');
     Route::get('/register', Register::class)->name('register');
 });
@@ -23,22 +23,22 @@ Route::post('/logout', function () {
     return redirect('/');
 })->middleware('auth')->name('logout');
 
-// Super Admin routes
+// Super Admin routes (no partner context)
 Route::middleware(['auth', 'role:super_admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', function () {
         return 'Super Admin Dashboard';
     })->name('dashboard');
 });
 
-// Partner routes
-Route::middleware(['auth', 'role:partner'])->prefix('partner')->name('partner.')->group(function () {
+// Partner routes (with partner context)
+Route::middleware(['auth', 'role:partner', 'partner.context'])->prefix('partner')->name('partner.')->group(function () {
     Route::get('/dashboard', function () {
         return 'Partner Dashboard';
     })->name('dashboard');
 });
 
-// Client routes
-Route::middleware(['auth', 'role:client'])->prefix('client')->name('client.')->group(function () {
+// Client routes (with partner context)
+Route::middleware(['auth', 'role:client', 'partner.context'])->prefix('client')->name('client.')->group(function () {
     Route::get('/dashboard', function () {
         return 'Client Dashboard';
     })->name('dashboard');

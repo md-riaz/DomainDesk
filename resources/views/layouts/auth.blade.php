@@ -5,11 +5,26 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title>{{ $title ?? config('app.name', 'DomainDesk') }}</title>
+        <title>{{ $title ?? (partnerBranding()?->email_sender_name ?? config('app.name', 'DomainDesk')) }}</title>
+
+        <!-- Favicon -->
+        @if(partnerBranding()?->favicon_path)
+            <link rel="icon" type="image/x-icon" href="{{ Storage::url(partnerBranding()->favicon_path) }}">
+        @endif
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600" rel="stylesheet" />
+
+        <!-- Dynamic Partner Colors -->
+        @if(partnerBranding())
+        <style>
+            :root {
+                --partner-primary: {{ partnerBranding()->primary_color ?? '#3b82f6' }};
+                --partner-secondary: {{ partnerBranding()->secondary_color ?? '#8b5cf6' }};
+            }
+        </style>
+        @endif
 
         <!-- Styles / Scripts -->
         @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
@@ -23,9 +38,15 @@
             <div class="w-full sm:max-w-md px-6 py-4">
                 <!-- Logo -->
                 <div class="flex justify-center mb-6">
-                    <a href="/" class="text-2xl font-semibold text-gray-900 dark:text-white">
-                        DomainDesk
-                    </a>
+                    @if(partnerBranding()?->logo_path)
+                        <img src="{{ Storage::url(partnerBranding()->logo_path) }}" 
+                             alt="{{ partnerBranding()->email_sender_name ?? 'Logo' }}" 
+                             class="h-12 w-auto">
+                    @else
+                        <a href="/" class="text-2xl font-semibold text-gray-900 dark:text-white">
+                            {{ partnerBranding()?->email_sender_name ?? config('app.name', 'DomainDesk') }}
+                        </a>
+                    @endif
                 </div>
 
                 <!-- Content -->
