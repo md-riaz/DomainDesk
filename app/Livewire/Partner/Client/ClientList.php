@@ -51,7 +51,7 @@ class ClientList extends Component
             ->where('partner_id', currentPartner()->id)
             ->findOrFail($clientId);
 
-        $client->update(['deleted_at' => now()]);
+        $client->delete();
 
         session()->flash('success', 'Client suspended successfully.');
     }

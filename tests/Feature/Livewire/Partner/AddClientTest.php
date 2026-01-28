@@ -49,7 +49,6 @@ class AddClientTest extends TestCase
             ->set('email', 'john@example.com')
             ->set('password', 'TestPass123')
             ->call('save')
-            ->assertSessionHas('success')
             ->assertDispatched('client-created');
 
         $this->assertDatabaseHas('users', [

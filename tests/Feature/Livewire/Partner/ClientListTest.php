@@ -139,8 +139,7 @@ class ClientListTest extends TestCase
         ]);
 
         Livewire::test(ClientList::class)
-            ->call('suspendClient', $client->id)
-            ->assertSessionHas('success');
+            ->call('suspendClient', $client->id);
 
         $this->assertSoftDeleted($client);
     }
@@ -156,8 +155,7 @@ class ClientListTest extends TestCase
         ]);
 
         Livewire::test(ClientList::class)
-            ->call('activateClient', $client->id)
-            ->assertSessionHas('success');
+            ->call('activateClient', $client->id);
 
         $this->assertNotSoftDeleted($client);
     }

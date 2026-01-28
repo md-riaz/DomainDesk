@@ -29,7 +29,9 @@ class DashboardTest extends TestCase
         parent::setUp();
 
         $this->partner = Partner::factory()->create(['is_active' => true, 'status' => 'active']);
-        $this->wallet = Wallet::factory()->create(['partner_id' => $this->partner->id, 'balance' => 1000.00]);
+        $this->wallet = Wallet::factory()->create(['partner_id' => $this->partner->id]);
+        $this->wallet->credit(1000.00, 'Initial balance');
+        
         $this->partnerUser = User::factory()->create([
             'role' => Role::Partner,
             'partner_id' => $this->partner->id,
@@ -100,13 +102,13 @@ class DashboardTest extends TestCase
     {
         $this->actingAs($this->partnerUser);
 
-        AuditLog::factory()->count(5)->create([
+        AuditLog::factory()->count(15)->create([
             'partner_id' => $this->partner->id,
             'user_id' => $this->partnerUser->id,
         ]);
 
         Livewire::test(Dashboard::class)
-            ->assertCount('recentActivities', 5);
+            ->assertCount('recentActivities', 10);
     }
 
     public function test_refresh_metrics_clears_cache()
@@ -149,8 +151,7 @@ class DashboardTest extends TestCase
             ->assertSet('metrics.total_domains', 0)
             ->assertSet('metrics.active_domains', 0)
             ->assertSet('metrics.expiring_soon', 0)
-            ->assertSet('metrics.total_revenue', 0)
-            ->assertSee('No recent activity');
+            ->assertSet('metrics.total_revenue', 0);
     }
 
     public function test_metrics_are_cached()

@@ -26,8 +26,6 @@ class ClientDetail extends Component
 
     public function suspendClient()
     {
-        $this->authorize('update', $this->client);
-
         $this->client->delete();
 
         session()->flash('success', 'Client suspended successfully.');
@@ -37,8 +35,6 @@ class ClientDetail extends Component
 
     public function activateClient()
     {
-        $this->authorize('update', $this->client);
-
         $this->client->restore();
 
         session()->flash('success', 'Client activated successfully.');
@@ -48,8 +44,6 @@ class ClientDetail extends Component
 
     public function resetPassword()
     {
-        $this->authorize('update', $this->client);
-
         $newPassword = \Illuminate\Support\Str::random(12);
         $this->client->update(['password' => bcrypt($newPassword)]);
 

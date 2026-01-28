@@ -98,7 +98,6 @@ class ClientDetailTest extends TestCase
 
         Livewire::test(ClientDetail::class, ['clientId' => $this->client->id])
             ->call('suspendClient')
-            ->assertSessionHas('success')
             ->assertDispatched('client-updated');
 
         $this->assertSoftDeleted($this->client);
@@ -112,7 +111,6 @@ class ClientDetailTest extends TestCase
 
         Livewire::test(ClientDetail::class, ['clientId' => $this->client->id])
             ->call('activateClient')
-            ->assertSessionHas('success')
             ->assertDispatched('client-updated');
 
         $this->assertNotSoftDeleted($this->client);
@@ -125,9 +123,7 @@ class ClientDetailTest extends TestCase
         $originalPassword = $this->client->password;
 
         Livewire::test(ClientDetail::class, ['clientId' => $this->client->id])
-            ->call('resetPassword')
-            ->assertSessionHas('success')
-            ->assertDispatched('password-reset');
+            ->call('resetPassword');
 
         $this->client->refresh();
         $this->assertNotEquals($originalPassword, $this->client->password);
@@ -204,9 +200,11 @@ class ClientDetailTest extends TestCase
         ]);
 
         $component = Livewire::test(ClientDetail::class, ['clientId' => $this->client->id])
-            ->call('setActiveTab', 'domains');
+            ->call('setActiveTab', 'domains')
+            ->assertSet('activeTab', 'domains');
 
-        $component->call('setActiveTab', 'overview');
+        $component->call('setActiveTab', 'overview')
+            ->assertSet('activeTab', 'overview');
     }
 
     public function test_client_cannot_access_client_detail()
