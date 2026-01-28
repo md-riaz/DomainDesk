@@ -3,6 +3,7 @@
 use App\Livewire\Auth\Login;
 use App\Livewire\Auth\Register;
 use App\Livewire\Client\Domain\RegisterDomain;
+use App\Livewire\Client\Domain\RenewDomain;
 use App\Livewire\Client\Domain\SearchDomain;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -47,4 +48,10 @@ Route::middleware(['auth', 'role:client', 'partner.context'])->prefix('client')-
     
     Route::get('/domains/search', SearchDomain::class)->name('domains.search');
     Route::get('/domains/register', RegisterDomain::class)->name('domains.register');
+    Route::get('/domains/{domain}/renew', RenewDomain::class)->name('domains.renew');
+    
+    // Placeholder for domain details page (referenced in RenewDomain component)
+    Route::get('/domains/{domain}', function ($domainId) {
+        return 'Domain Details - ID: ' . $domainId;
+    })->name('domains.show');
 });

@@ -28,3 +28,16 @@ Schedule::command('tld:sync-prices')
     ->name('daily-tld-price-sync')
     ->withoutOverlapping()
     ->runInBackground();
+
+// Domain Renewal Scheduler
+Schedule::command('domain:process-auto-renewals --lead-time=7')
+    ->dailyAt('02:00')
+    ->name('process-auto-renewals')
+    ->withoutOverlapping()
+    ->runInBackground();
+
+Schedule::command('domain:send-expiry-warnings')
+    ->dailyAt('08:00')
+    ->name('send-expiry-warnings')
+    ->withoutOverlapping()
+    ->runInBackground();
