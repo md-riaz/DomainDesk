@@ -3,21 +3,32 @@
 namespace App\Mail;
 
 use App\Models\Domain;
+use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class DomainTransferCompleted extends Mailable
+class DomainExpiryAlert extends Mailable
 {
     use Queueable, SerializesModels;
 
     public Domain $domain;
+    public int $daysExpired;
+    public float $renewalCost;
+    public float $redemptionFee;
+    public Carbon $gracePeriodEnds;
+    public int $daysUntilGracePeriodEnds;
 
-    public function __construct(Domain $domain)
+    public function __construct(Domain $domain, int $daysExpired, float $renewalCost, float $redemptionFee = 0, int $gracePeriodDays = 30)
     {
         $this->domain = $domain;
+        $this->daysExpired = $daysExpired;
+        $this->renewalCost = $renewalCost;
+        $this->redemptionFee = $redemptionFee;
+        $this->gracePeriodEnds = $domain->expires_at->copy()->addDays($gracePeriodDays);
+        $this->daysUntilGracePeriodEnds = max(0, now()->diffInDays($this->gracePeriodEnds, false));
     }
 
     public function envelope(): Envelope
@@ -25,7 +36,7 @@ class DomainTransferCompleted extends Mailable
         $branding = $this->domain->partner->branding;
         
         return new Envelope(
-            subject: 'Domain Transfer Completed - ' . $this->domain->name,
+            subject: "🚨 CRITICAL: {$this->domain->name} has EXPIRED!",
             from: $branding && $branding->email_sender_email 
                 ? [$branding->email_sender_email => $branding->email_sender_name ?? config('app.name')]
                 : null,
@@ -44,12 +55,18 @@ class DomainTransferCompleted extends Mailable
         ];
         
         return new Content(
-            view: 'emails.domain-transfer-completed',
+            view: 'emails.domain-expiry-alert',
             with: [
                 'domain' => $this->domain,
                 'branding' => $branding,
+                'daysExpired' => $this->daysExpired,
+                'renewalCost' => $this->renewalCost,
+                'redemptionFee' => $this->redemptionFee,
+                'gracePeriodEnds' => $this->gracePeriodEnds,
+                'daysUntilGracePeriodEnds' => $this->daysUntilGracePeriodEnds,
+                'renewalUrl' => url('/dashboard/domains/' . $this->domain->id . '/renew'),
                 'dashboardUrl' => url('/dashboard'),
-            ]
+            ],
         );
     }
 

@@ -188,4 +188,3 @@ class InvoiceGeneratedTest extends TestCase
         $this->assertNotEmpty($mail->actionUrl);
     }
 }
-}

@@ -25,21 +25,37 @@ class DomainRegistered extends Mailable
 
     public function envelope(): Envelope
     {
+        $branding = $this->domain->partner->branding;
+        
         return new Envelope(
             subject: 'Domain Registered Successfully - ' . $this->domain->name,
+            from: $branding && $branding->email_sender_email 
+                ? [$branding->email_sender_email => $branding->email_sender_name ?? config('app.name')]
+                : null,
+            replyTo: $branding && $branding->reply_to_email 
+                ? [$branding->reply_to_email]
+                : null,
         );
     }
 
     public function content(): Content
     {
+        $branding = $this->domain->partner->branding ?? (object)[
+            'email_sender_name' => config('app.name'),
+            'primary_color' => '#4f46e5',
+            'secondary_color' => '#6366f1',
+        ];
+        
+        $nameservers = $this->domain->nameservers()->pluck('nameserver')->toArray();
+        
         return new Content(
             view: 'emails.domain-registered',
             with: [
-                'domainName' => $this->domain->name,
-                'expiresAt' => $this->domain->expires_at->format('F j, Y'),
-                'invoiceNumber' => $this->invoice->invoice_number,
-                'total' => number_format($this->invoice->total, 2),
-                'autoRenew' => $this->domain->auto_renew,
+                'domain' => $this->domain,
+                'invoice' => $this->invoice,
+                'branding' => $branding,
+                'nameservers' => $nameservers,
+                'dashboardUrl' => url('/dashboard'),
             ],
         );
     }

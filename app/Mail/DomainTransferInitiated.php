@@ -13,42 +13,63 @@ class DomainTransferInitiated extends Mailable
 {
     use Queueable, SerializesModels;
 
-    /**
-     * Create a new message instance.
-     */
-    public function __construct(
-        public Domain $domain
-    ) {}
+    public Domain $domain;
+    public ?string $status;
+    public ?string $expectedCompletion;
+    public ?string $currentRegistrar;
+    public ?string $authCode;
 
-    /**
-     * Get the message envelope.
-     */
+    public function __construct(
+        Domain $domain,
+        ?string $status = null,
+        ?string $expectedCompletion = null,
+        ?string $currentRegistrar = null,
+        ?string $authCode = null
+    ) {
+        $this->domain = $domain;
+        $this->status = $status ?? 'Pending';
+        $this->expectedCompletion = $expectedCompletion;
+        $this->currentRegistrar = $currentRegistrar;
+        $this->authCode = $authCode;
+    }
+
     public function envelope(): Envelope
     {
+        $branding = $this->domain->partner->branding;
+        
         return new Envelope(
             subject: 'Domain Transfer Initiated - ' . $this->domain->name,
+            from: $branding && $branding->email_sender_email 
+                ? [$branding->email_sender_email => $branding->email_sender_name ?? config('app.name')]
+                : null,
+            replyTo: $branding && $branding->reply_to_email 
+                ? [$branding->reply_to_email]
+                : null,
         );
     }
 
-    /**
-     * Get the message content definition.
-     */
     public function content(): Content
     {
+        $branding = $this->domain->partner->branding ?? (object)[
+            'email_sender_name' => config('app.name'),
+            'primary_color' => '#4f46e5',
+            'secondary_color' => '#6366f1',
+        ];
+        
         return new Content(
             view: 'emails.domain-transfer-initiated',
             with: [
-                'domainName' => $this->domain->name,
-                'estimatedCompletion' => $this->domain->transfer_metadata['estimated_completion'] ?? 'within 5-7 days',
+                'domain' => $this->domain,
+                'branding' => $branding,
+                'status' => $this->status,
+                'expectedCompletion' => $this->expectedCompletion,
+                'currentRegistrar' => $this->currentRegistrar,
+                'authCode' => $this->authCode,
+                'dashboardUrl' => url('/dashboard'),
             ]
         );
     }
 
-    /**
-     * Get the attachments for the message.
-     *
-     * @return array<int, \Illuminate\Mail\Mailables\Attachment>
-     */
     public function attachments(): array
     {
         return [];
