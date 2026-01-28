@@ -75,6 +75,11 @@ return [
                 'max_attempts' => 120, // Higher limit for production registrar
                 'decay_minutes' => 1,
             ],
+            'default_nameservers' => [
+                env('RESELLERCLUB_NS1', 'ns1.resellerclub.com'),
+                env('RESELLERCLUB_NS2', 'ns2.resellerclub.com'),
+            ],
+            'cache_ttl' => 300, // Cache API responses for 5 minutes
         ],
 
         'logicboxes' => [
