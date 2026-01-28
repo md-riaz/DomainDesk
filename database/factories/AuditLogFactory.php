@@ -19,18 +19,34 @@ class AuditLogFactory extends Factory
      */
     public function definition(): array
     {
-        $actions = ['created', 'updated', 'deleted', 'soft_deleted'];
-        
         return [
             'user_id' => User::factory(),
             'partner_id' => Partner::factory(),
-            'action' => fake()->randomElement($actions),
+            'action' => 'created',
             'auditable_type' => Domain::class,
             'auditable_id' => Domain::factory(),
-            'old_values' => fake()->randomElement([null, ['status' => 'active']]),
-            'new_values' => fake()->randomElement([null, ['status' => 'expired']]),
+            'old_values' => null,
+            'new_values' => ['status' => 'active', 'name' => fake()->domainName()],
             'ip_address' => fake()->ipv4(),
             'user_agent' => fake()->userAgent(),
         ];
+    }
+
+    public function updated(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'action' => 'updated',
+            'old_values' => ['status' => 'active'],
+            'new_values' => ['status' => 'expired'],
+        ]);
+    }
+
+    public function deleted(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'action' => 'deleted',
+            'old_values' => ['status' => 'active', 'name' => fake()->domainName()],
+            'new_values' => null,
+        ]);
     }
 }

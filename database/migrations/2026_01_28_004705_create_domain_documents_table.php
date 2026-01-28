@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('file_path');
             $table->string('original_filename');
             $table->unsignedBigInteger('file_size');
-            $table->foreignId('uploaded_by')->constrained('users');
+            $table->foreignId('uploaded_by')->constrained('users')->cascadeOnDelete();
             $table->foreignId('verified_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamp('verified_at')->nullable();
             $table->text('notes')->nullable();

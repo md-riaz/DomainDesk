@@ -53,8 +53,8 @@ class AuditLoggingTest extends TestCase
             'auto_renew' => false,
         ]);
 
-        // Clear the created audit log
-        AuditLog::truncate();
+        // Get the count before update
+        $initialCount = AuditLog::count();
 
         $domain->update(['auto_renew' => true]);
 
@@ -64,6 +64,7 @@ class AuditLoggingTest extends TestCase
             ->first();
 
         $this->assertNotNull($auditLog);
+        $this->assertEquals($initialCount + 1, AuditLog::count());
         $this->assertEquals($user->id, $auditLog->user_id);
         $this->assertEquals($partner->id, $auditLog->partner_id);
         $this->assertArrayHasKey('auto_renew', $auditLog->old_values);
@@ -84,7 +85,7 @@ class AuditLoggingTest extends TestCase
             'client_id' => $user->id,
         ]);
 
-        AuditLog::truncate();
+        $initialCount = AuditLog::count();
 
         $domain->delete();
 
@@ -94,6 +95,7 @@ class AuditLoggingTest extends TestCase
             ->first();
 
         $this->assertNotNull($auditLog);
+        $this->assertEquals($initialCount + 1, AuditLog::count());
         $this->assertEquals($user->id, $auditLog->user_id);
     }
 
@@ -220,17 +222,13 @@ class AuditLoggingTest extends TestCase
             'client_id' => $user->id,
         ]);
 
-        AuditLog::truncate();
+        $initialCount = AuditLog::count();
 
         // Save without changes
         $domain->save();
 
-        $auditLog = AuditLog::where('auditable_type', Domain::class)
-            ->where('auditable_id', $domain->id)
-            ->where('action', 'updated')
-            ->first();
-
-        $this->assertNull($auditLog);
+        // Should not create a new audit log
+        $this->assertEquals($initialCount, AuditLog::count());
     }
 
     public function test_audit_log_has_polymorphic_relationship(): void

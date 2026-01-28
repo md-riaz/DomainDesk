@@ -20,14 +20,14 @@ class DomainDocumentSeeder extends Seeder
         foreach ($domains as $domain) {
             // Create 1-3 documents per domain
             DomainDocument::factory()
-                ->count(rand(1, 3))
+                ->count(fake()->numberBetween(1, 3))
                 ->create([
                     'domain_id' => $domain->id,
                     'uploaded_by' => $domain->client_id,
                 ]);
                 
             // Create one verified document
-            if (rand(0, 1)) {
+            if (fake()->boolean()) {
                 $verifier = User::whereIn('role', ['super_admin', 'partner'])->first();
                 if ($verifier) {
                     DomainDocument::factory()

@@ -61,7 +61,14 @@ trait Auditable
         $attributes = $this->getAttributes();
         
         // Remove timestamps and sensitive data
-        unset($attributes['created_at'], $attributes['updated_at'], $attributes['deleted_at']);
+        $excludedFields = array_merge(
+            ['created_at', 'updated_at', 'deleted_at'],
+            $this->getHidden()
+        );
+        
+        foreach ($excludedFields as $field) {
+            unset($attributes[$field]);
+        }
         
         return $attributes;
     }

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\DocumentType;
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,7 +11,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class DomainDocument extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, Auditable;
 
     protected $fillable = [
         'domain_id',
@@ -50,12 +51,12 @@ class DomainDocument extends Model
         return $this->verified_at !== null;
     }
 
-    public function verify(User $verifier, ?string $notes = null): void
+    public function verify(User $verifier, ?string $verificationNotes = null): void
     {
         $this->update([
             'verified_by' => $verifier->id,
             'verified_at' => now(),
-            'notes' => $notes,
+            'notes' => $verificationNotes,
         ]);
     }
 }
