@@ -480,9 +480,18 @@ class DnsService
      */
     protected function validateCNAMERecord(array $data): void
     {
-        if (!$this->isValidHostname($data['value'] ?? '')) {
+        $value = $data['value'] ?? '';
+        
+        if (!$this->isValidHostname($value)) {
             throw ValidationException::withMessages([
                 'value' => 'Invalid hostname.',
+            ]);
+        }
+
+        // CNAME must be FQDN (have at least one dot)
+        if (strpos($value, '.') === false) {
+            throw ValidationException::withMessages([
+                'value' => 'CNAME value must be a fully qualified domain name.',
             ]);
         }
     }

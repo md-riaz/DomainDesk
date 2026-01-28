@@ -104,7 +104,7 @@
                     @forelse ($this->dnsRecords as $record)
                         <tr class="hover:bg-gray-50">
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-{{ $record['type']->getColor() }}-100 text-{{ $record['type']->getColor() }}-800">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $record['type']->getBadgeClasses() }}">
                                     {{ $record['type']->value }}
                                 </span>
                             </td>

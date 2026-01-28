@@ -34,4 +34,17 @@ enum DnsRecordType: string
             self::SRV => 'pink',
         };
     }
+
+    public function getBadgeClasses(): string
+    {
+        return match($this) {
+            self::A => 'bg-blue-100 text-blue-800',
+            self::AAAA => 'bg-indigo-100 text-indigo-800',
+            self::CNAME => 'bg-purple-100 text-purple-800',
+            self::MX => 'bg-green-100 text-green-800',
+            self::TXT => 'bg-yellow-100 text-yellow-800',
+            self::NS => 'bg-red-100 text-red-800',
+            self::SRV => 'bg-pink-100 text-pink-800',
+        };
+    }
 }

@@ -33,14 +33,45 @@ class NameserverServiceTest extends TestCase
         $this->user = User::factory()->client()->create(['partner_id' => $partner->id]);
         
         $this->domain = Domain::factory()->active()->create([
+            'name' => 'test-domain.com',  // Use fixed name
             'partner_id' => $partner->id,
             'registrar_id' => $registrar->id,
             'client_id' => $this->user->id,
         ]);
+
+        // Initialize domain in MockRegistrar cache
+        \Illuminate\Support\Facades\Cache::put(
+            'mock_domain:test-domain.com',
+            [
+                'name' => 'test-domain.com',
+                'status' => 'active',
+                'nameservers' => [],
+                'registered_at' => now()->toIso8601String(),
+                'expires_at' => now()->addYear()->toIso8601String(),
+            ],
+            3600
+        );
+    }
+
+    protected function seedMockDomainCache()
+    {
+        \Illuminate\Support\Facades\Cache::put(
+            'mock_domain:test-domain.com',
+            [
+                'name' => 'test-domain.com',
+                'status' => 'active',
+                'nameservers' => [],
+                'registered_at' => now()->toIso8601String(),
+                'expires_at' => now()->addYear()->toIso8601String(),
+            ],
+            3600
+        );
     }
 
     public function test_update_nameservers_successfully()
     {
+        $this->seedMockDomainCache();
+
         $nameservers = [
             'ns1.example.com',
             'ns2.example.com',
@@ -48,7 +79,7 @@ class NameserverServiceTest extends TestCase
 
         $result = $this->service->updateNameservers($this->domain, $nameservers, $this->user->id);
 
-        $this->assertTrue($result['success']);
+        $this->assertTrue($result['success'], 'Failed: ' . ($result['message'] ?? 'Unknown error'));
         $this->assertStringContainsString('successfully', $result['message']);
         
         $this->assertDatabaseHas('domain_nameservers', [

@@ -46,6 +46,20 @@ class DnsServiceTest extends TestCase
             'registrar_id' => $registrar->id,
             'client_id' => $this->user->id,
         ]);
+
+        // Initialize domain in MockRegistrar cache
+        \Illuminate\Support\Facades\Cache::put(
+            'mock_domain:' . $this->domain->name,
+            [
+                'name' => $this->domain->name,
+                'status' => 'active',
+                'nameservers' => [],
+                'dns_records' => [],
+                'registered_at' => now()->toIso8601String(),
+                'expires_at' => now()->addYear()->toIso8601String(),
+            ],
+            3600
+        );
     }
 
     public function test_add_a_record_successfully()
