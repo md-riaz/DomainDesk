@@ -165,7 +165,7 @@
                         </th>
                         @for($years = $tld->min_years; $years <= $tld->max_years; $years++)
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                {{ $years }} {{ Str::plural('Year', $years) }}
+                                {{ $years }} {{ Str::plural('year', $years) }}
                             </th>
                         @endfor
                     </tr>

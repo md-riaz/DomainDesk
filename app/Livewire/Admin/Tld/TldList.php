@@ -50,7 +50,7 @@ class TldList extends Component
         $this->resetPage();
     }
 
-    public function sortBy($field)
+    public function updateSortBy($field)
     {
         if ($this->sortBy === $field) {
             $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';

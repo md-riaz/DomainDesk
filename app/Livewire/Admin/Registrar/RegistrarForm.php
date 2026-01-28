@@ -43,6 +43,14 @@ class RegistrarForm extends Component
         ];
     }
 
+    protected function messages()
+    {
+        return [
+            'credentialsJson.required' => 'API credentials are required.',
+            'credentialsJson.json' => 'API credentials must be valid JSON format.',
+        ];
+    }
+
     public function mount($registrarId = null)
     {
         $this->availableClasses = $this->getAvailableRegistrarClasses();
@@ -67,7 +75,10 @@ class RegistrarForm extends Component
 
     public function testConnection()
     {
-        $this->validate();
+        $this->validate([
+            'api_class' => 'required',
+            'credentialsJson' => 'required|json',
+        ]);
         
         $this->isTesting = true;
         $this->testResult = null;
@@ -81,8 +92,8 @@ class RegistrarForm extends Component
             }
             
             $config = [
-                'name' => $this->name,
-                'slug' => Str::slug($this->name),
+                'name' => $this->name ?: 'Test',
+                'slug' => $this->name ? Str::slug($this->name) : 'test',
             ];
             
             $instance = new $this->api_class($config, $credentials);

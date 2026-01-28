@@ -49,6 +49,7 @@
                         Deactivate
                     </button>
                     <select
+                        wire:model.live="registrarFilter"
                         wire:change="bulkAssignRegistrar($event.target.value)"
                         class="rounded-lg border-gray-300 text-xs"
                     >
@@ -74,7 +75,7 @@
                             class="rounded border-gray-300 text-blue-600"
                         />
                     </th>
-                    <th wire:click="sortBy('extension')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
+                    <th wire:click="updateSortBy('extension')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
                         <div class="flex items-center">
                             Extension
                             @if($sortBy === 'extension')

@@ -77,10 +77,16 @@ class TldPricing extends Component
     {
         $this->validate([
             'newPrice' => 'required|numeric|min:0',
-            'effectiveDate' => 'required|date|before_or_equal:' . now()->addDays(30)->toDateString(),
+            'effectiveDate' => [
+                'required',
+                'date',
+                'before_or_equal:' . now()->addDays(30)->toDateString(),
+            ],
             'selectedAction' => 'required|in:register,renew,transfer',
             'selectedYears' => 'required|integer|min:1|max:10',
             'notes' => 'nullable|string|max:500',
+        ], [
+            'effectiveDate.before_or_equal' => 'The effective date cannot be more than 30 days in the future.',
         ]);
         
         try {
