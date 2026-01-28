@@ -8,16 +8,33 @@ A comprehensive SaaS platform built with Laravel 12 and Livewire 4, enabling par
 [![Livewire](https://img.shields.io/badge/Livewire-4-purple.svg)](https://livewire.laravel.com)
 [![PHP](https://img.shields.io/badge/PHP-8.2+-blue.svg)](https://php.net)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Tests](https://github.com/md-riaz/DomainDesk/actions/workflows/tests.yml/badge.svg)](https://github.com/md-riaz/DomainDesk/actions/workflows/tests.yml)
 
 ---
 
 ## 📚 Documentation
 
-- **[IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)** - Comprehensive 13-phase implementation roadmap (36KB, 1387 lines)
-- **[QUICK_START_GUIDE.md](QUICK_START_GUIDE.md)** - Quick reference for getting started
-- **[SETUP_SUMMARY.md](SETUP_SUMMARY.md)** - Laravel & Livewire setup details
-- **[LARAVEL_LLM_DOCS.md](LARAVEL_LLM_DOCS.md)** - Laravel framework reference
-- **[LIVEWIRE_DOCS.md](LIVEWIRE_DOCS.md)** - Livewire component reference
+### User Documentation
+- **[Installation Guide](docs/INSTALLATION.md)** - Complete installation instructions for dev and production
+- **[User Guide](docs/USER_GUIDE.md)** - Comprehensive guide for clients, partners, and admins
+- **[API Documentation](docs/API_DOCUMENTATION.md)** - REST API endpoints and examples
+
+### Developer Documentation
+- **[Development Guide](docs/DEVELOPMENT.md)** - Local development setup and workflows
+- **[Architecture](docs/ARCHITECTURE.md)** - System architecture and design patterns
+- **[Contributing](CONTRIBUTING.md)** - How to contribute to the project
+
+### Deployment & Operations
+- **[Docker Guide](docs/DOCKER.md)** - Docker setup and container management
+- **[Deployment Guide](docs/DEPLOYMENT.md)** - Production deployment procedures
+- **[Operations](docs/OPERATIONS.md)** - Monitoring, maintenance, and troubleshooting
+- **[Security](docs/SECURITY.md)** - Security best practices and guidelines
+
+### Reference Documentation
+- **[Implementation Plan](IMPLEMENTATION_PLAN.md)** - 13-phase development roadmap
+- **[Quick Start Guide](QUICK_START_GUIDE.md)** - Quick reference for getting started
+- **[Laravel Reference](LARAVEL_LLM_DOCS.md)** - Laravel framework reference
+- **[Livewire Reference](LIVEWIRE_DOCS.md)** - Livewire component reference
 
 ---
 
@@ -54,23 +71,58 @@ A comprehensive SaaS platform built with Laravel 12 and Livewire 4, enabling par
 
 ## 📦 Installation
 
+### Quick Start (Development)
+
 ```bash
 # Clone repository
 git clone https://github.com/md-riaz/DomainDesk.git
 cd DomainDesk
 
-# Install PHP dependencies
-composer install
+# Run automated setup
+composer setup
 
-# Install Node dependencies
-npm install
-
-# The database is already set up! Just start the server
-php artisan serve
-
-# Or run the full development environment
+# Start development server with all services
 composer dev
 ```
+
+The `composer dev` command starts:
+- Laravel development server (http://localhost:8000)
+- Queue worker
+- Log viewer (Pail)
+- Vite dev server
+
+### Production Installation
+
+```bash
+# Install dependencies (production only)
+composer install --no-dev --optimize-autoloader
+npm ci
+npm run build
+
+# Configure environment
+cp .env.production.example .env
+php artisan key:generate
+
+# Run migrations
+php artisan migrate --force
+
+# Optimize for production
+php artisan optimize
+```
+
+For complete installation instructions, see [Installation Guide](docs/INSTALLATION.md).
+
+### Docker Installation
+
+```bash
+# Development
+docker-compose up -d
+
+# Production
+docker-compose -f docker-compose.prod.yml up -d
+```
+
+See [Docker Guide](docs/DOCKER.md) for detailed instructions.
 
 ---
 
@@ -98,18 +150,28 @@ See [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) for complete breakdown.
 - Global scopes enforce data isolation
 - Hard foreign key constraints on all tables
 - Cross-partner access impossible by design
+- See [Architecture Guide](docs/ARCHITECTURE.md) for details
 
 ### Financial Integrity
 - Append-only wallet transaction ledger
 - Immutable invoices after issuance
 - Deterministic pricing (no floating point errors)
 - Full audit trail for all financial operations
+- Atomic database transactions for wallet operations
 
 ### White-Label First
 - Partner branding loaded on every request
 - Custom domain resolution with DNS verification
 - Branded emails and invoices
 - Partner-specific support contacts
+- Complete UI customization per partner
+
+### Scalability
+- Stateless application design
+- Redis caching for performance
+- Queue-based async operations
+- Database read replicas support
+- Horizontal scaling ready
 
 ---
 
@@ -123,10 +185,15 @@ php artisan test
 php artisan test --testsuite=Feature
 
 # Run with coverage
-php artisan test --coverage
+php artisan test --coverage --min=80
+
+# Run parallel tests
+php artisan test --parallel
 ```
 
-Target: 80%+ code coverage
+**Current Status**: 72 test files | Target: 80%+ code coverage
+
+Tests run automatically on every push via GitHub Actions.
 
 ---
 
@@ -161,28 +228,49 @@ php artisan optimize:clear
 
 ## 🤝 Contributing
 
-We follow Laravel conventions and best practices:
+We welcome contributions! Please read our [Contributing Guide](CONTRIBUTING.md) for details on:
+
+- Code of Conduct
+- Development setup
+- Coding standards (PSR-12)
+- Testing requirements
+- Pull request process
+- Code review guidelines
+
+### Quick Contribution Steps
 
 1. Fork the repository
-2. Create a feature branch
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
 3. Write tests for your changes
-4. Follow PSR-12 coding standards
-5. Submit a pull request
-
-See [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) for detailed architecture and patterns.
+4. Run code formatter (`./vendor/bin/pint`)
+5. Ensure tests pass (`php artisan test`)
+6. Commit your changes (`git commit -m 'feat: add amazing feature'`)
+7. Push to the branch (`git push origin feature/amazing-feature`)
+8. Open a Pull Request
 
 ---
 
 ## 🔐 Security
 
-- Multi-tenant data isolation enforced at database level
-- CSRF protection on all forms
-- XSS prevention with Blade escaping
-- SQL injection prevention via Eloquent
-- Rate limiting on authentication endpoints
-- Full audit logging for compliance
+### Security Features
 
-Report security vulnerabilities to: [security@domaindesk.example.com](mailto:security@domaindesk.example.com)
+- ✅ Multi-tenant data isolation (database + application level)
+- ✅ CSRF protection on all forms
+- ✅ XSS prevention with Blade escaping
+- ✅ SQL injection prevention via Eloquent ORM
+- ✅ Rate limiting on authentication endpoints
+- ✅ Full audit logging for compliance
+- ✅ Encrypted sensitive data (API keys, passwords)
+- ✅ Two-factor authentication (2FA) support
+- ✅ OWASP Top 10 protection
+
+### Reporting Vulnerabilities
+
+Please report security vulnerabilities privately via:
+- Email: [security@domaindesk.com](mailto:security@domaindesk.com)
+- GitHub Security Advisories
+
+See our [Security Policy](docs/SECURITY.md) for more details.
 
 ---
 
