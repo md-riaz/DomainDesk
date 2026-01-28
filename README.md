@@ -12,6 +12,54 @@ A comprehensive SaaS platform built with Laravel 12 and Livewire 4, enabling par
 
 ---
 
+## 📸 Platform Preview
+
+### Login Page
+![Login Page](https://github.com/user-attachments/assets/7c68706a-16c5-4a57-acae-f5833f1cdf32)
+
+Clean and intuitive login interface with white-label partner branding support.
+
+### Demo Credentials
+
+For testing purposes, the following demo accounts are created by the seeder:
+
+**Super Admin**
+- Email: `admin@domaindesk.com`
+- Password: `password`
+- Access: Full system control, partner management, registrar configuration
+
+**Partner Accounts**
+- Created via Admin Panel with wallet balance and branding configuration
+- Can manage clients, domains, pricing rules, and view business metrics
+
+**Client Accounts**
+- Created by Partners or via registration
+- Can search/register domains, manage DNS, view invoices
+
+### Key Features Showcased
+
+**Admin Dashboard**
+- System-wide metrics (partners, clients, domains, revenue)
+- Partner management with wallet adjustments
+- Registrar and TLD pricing configuration
+- System health monitoring and audit logs
+
+**Partner Portal**
+- Business metrics dashboard with revenue tracking
+- Client management (create, suspend, activate)
+- White-label branding configuration (logo, colors, custom domains)
+- Pricing rules management with markup control
+- Wallet balance and transaction history
+
+**Client Portal**
+- Domain search with bulk lookup capabilities
+- Domain registration with multi-step wizard
+- Domain management (renewals, transfers, DNS)
+- Nameserver and DNS record configuration
+- Invoice history and payment tracking
+
+---
+
 ## 📚 Documentation
 
 ### User Documentation
