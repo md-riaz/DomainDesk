@@ -21,8 +21,10 @@ class PartnerBranding extends Model
         'login_background_path',
         'email_sender_name',
         'email_sender_email',
+        'reply_to_email',
         'support_email',
         'support_phone',
+        'support_url',
     ];
 
     public function partner(): BelongsTo

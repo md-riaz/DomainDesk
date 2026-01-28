@@ -42,4 +42,24 @@ class PartnerDomain extends Model
     {
         return $query->where('is_primary', true);
     }
+
+    public function isVerified(): bool
+    {
+        return $this->is_verified === true;
+    }
+
+    public function isPending(): bool
+    {
+        return $this->dns_status === 'pending';
+    }
+
+    public function hasFailed(): bool
+    {
+        return $this->dns_status === 'failed';
+    }
+
+    public function getCnameTarget(): string
+    {
+        return config('app.url');
+    }
 }

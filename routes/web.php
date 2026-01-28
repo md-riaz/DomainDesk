@@ -43,6 +43,13 @@ Route::middleware(['auth', 'role:partner', 'partner.context'])->prefix('partner'
     Route::get('/clients', \App\Livewire\Partner\Client\ClientList::class)->name('clients.list');
     Route::get('/clients/add', \App\Livewire\Partner\Client\AddClient::class)->name('clients.add');
     Route::get('/clients/{clientId}', \App\Livewire\Partner\Client\ClientDetail::class)->name('clients.show');
+    
+    // Settings routes
+    Route::get('/settings/branding', \App\Livewire\Partner\Settings\BrandingSettings::class)->name('settings.branding');
+    Route::get('/settings/domains', \App\Livewire\Partner\Settings\DomainSettings::class)->name('settings.domains');
+    
+    // Pricing routes
+    Route::get('/pricing/rules', \App\Livewire\Partner\Pricing\PricingRules::class)->name('pricing.rules');
 });
 
 // Client routes (with partner context)
