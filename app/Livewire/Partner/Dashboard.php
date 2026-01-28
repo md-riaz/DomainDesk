@@ -11,8 +11,18 @@ use App\Models\User;
 use Illuminate\Support\Facades\Cache;
 use Livewire\Component;
 
+/**
+ * Partner Dashboard Component
+ * 
+ * Displays business metrics, recent activity feed, and quick action links
+ * for partner users. Metrics are cached for 5 minutes to improve performance.
+ */
 class Dashboard extends Component
 {
+    const CACHE_TTL = 300; // 5 minutes
+    const ACTIVITY_LIMIT = 10;
+    const EXPIRING_SOON_DAYS = 30;
+
     public array $metrics = [];
     public $recentActivities = [];
 
@@ -26,7 +36,7 @@ class Dashboard extends Component
     {
         $cacheKey = 'partner.dashboard.metrics.' . currentPartner()->id;
         
-        $this->metrics = Cache::remember($cacheKey, 300, function () {
+        $this->metrics = Cache::remember($cacheKey, self::CACHE_TTL, function () {
             $partnerId = currentPartner()->id;
 
             $totalRevenue = Invoice::where('partner_id', $partnerId)
@@ -42,7 +52,7 @@ class Dashboard extends Component
                     ->where('status', DomainStatus::Active)
                     ->count(),
                 'expiring_soon' => Domain::where('partner_id', $partnerId)
-                    ->expiring(30)
+                    ->expiring(self::EXPIRING_SOON_DAYS)
                     ->count(),
                 'total_revenue' => $totalRevenue,
                 'wallet_balance' => partnerWallet()?->balance ?? 0,
@@ -57,7 +67,7 @@ class Dashboard extends Component
         $this->recentActivities = AuditLog::where('partner_id', $partnerId)
             ->with('user')
             ->latest()
-            ->limit(10)
+            ->limit(self::ACTIVITY_LIMIT)
             ->get()
             ->map(function ($log) {
                 return [

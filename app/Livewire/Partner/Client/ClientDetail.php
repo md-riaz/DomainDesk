@@ -8,12 +8,23 @@ use App\Models\User;
 use Livewire\Component;
 use Livewire\WithPagination;
 
+/**
+ * Client Detail Component
+ * 
+ * Displays detailed information about a client including overview, domains, and invoices.
+ * Provides functionality to suspend/activate clients and reset passwords.
+ * Uses tabbed navigation with pagination for domains and invoices.
+ */
 class ClientDetail extends Component
 {
     use WithPagination;
 
+    const ITEMS_PER_PAGE = 10;
+    const PASSWORD_LENGTH = 12;
+
     public User $client;
     public string $activeTab = 'overview';
+    public ?string $resetPasswordValue = null;
 
     public function mount($clientId)
     {
@@ -27,6 +38,7 @@ class ClientDetail extends Component
     public function suspendClient()
     {
         $this->client->delete();
+        $this->client->refresh();
 
         session()->flash('success', 'Client suspended successfully.');
         
@@ -36,6 +48,7 @@ class ClientDetail extends Component
     public function activateClient()
     {
         $this->client->restore();
+        $this->client->refresh();
 
         session()->flash('success', 'Client activated successfully.');
         
@@ -44,10 +57,12 @@ class ClientDetail extends Component
 
     public function resetPassword()
     {
-        $newPassword = \Illuminate\Support\Str::random(12);
+        $newPassword = \Illuminate\Support\Str::random(self::PASSWORD_LENGTH);
         $this->client->update(['password' => bcrypt($newPassword)]);
+        $this->client->refresh();
 
-        session()->flash('success', "Password reset successfully. New password: {$newPassword}");
+        // Store password in component state instead of session for security
+        $this->resetPasswordValue = $newPassword;
         
         $this->dispatch('password-reset', password: $newPassword);
     }
@@ -69,13 +84,13 @@ class ClientDetail extends Component
                 ->where('partner_id', currentPartner()->id)
                 ->with('client')
                 ->latest()
-                ->paginate(10);
+                ->paginate(self::ITEMS_PER_PAGE);
         } elseif ($this->activeTab === 'invoices') {
             $data['invoices'] = Invoice::where('client_id', $this->client->id)
                 ->where('partner_id', currentPartner()->id)
                 ->with('items')
                 ->latest()
-                ->paginate(10);
+                ->paginate(self::ITEMS_PER_PAGE);
             
             $data['totalSpent'] = Invoice::where('client_id', $this->client->id)
                 ->where('partner_id', currentPartner()->id)

@@ -9,9 +9,18 @@ use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 use Livewire\WithPagination;
 
+/**
+ * Client List Component
+ * 
+ * Displays paginated list of partner's clients with search, filtering, and sorting.
+ * Provides functionality to suspend/activate clients and export to CSV.
+ * Includes domain count for each client.
+ */
 class ClientList extends Component
 {
     use WithPagination;
+
+    const ITEMS_PER_PAGE = 20;
 
     public string $search = '';
     public string $statusFilter = 'all';
@@ -76,9 +85,9 @@ class ClientList extends Component
         
         foreach ($clients as $client) {
             $csv .= sprintf(
-                "%s,%s,%d,%s,%s\n",
-                $client->name,
-                $client->email,
+                '"%s","%s",%d,%s,%s' . "\n",
+                str_replace('"', '""', $client->name),
+                str_replace('"', '""', $client->email),
                 $client->domains_count,
                 $client->created_at->format('Y-m-d'),
                 $client->trashed() ? 'Suspended' : 'Active'
@@ -94,8 +103,7 @@ class ClientList extends Component
     {
         $query = User::whereClient()
             ->where('partner_id', currentPartner()->id)
-            ->withCount('domains')
-            ->with('domains');
+            ->withCount('domains');
 
         if ($this->search) {
             $query->where(function ($q) {
@@ -119,7 +127,7 @@ class ClientList extends Component
 
     public function render()
     {
-        $clients = $this->getClientsQuery()->paginate(20);
+        $clients = $this->getClientsQuery()->paginate(self::ITEMS_PER_PAGE);
 
         return view('livewire.partner.client.client-list', [
             'clients' => $clients,

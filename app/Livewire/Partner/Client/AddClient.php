@@ -9,8 +9,17 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
 use Livewire\Component;
 
+/**
+ * Add Client Component
+ * 
+ * Allows partners to create new client accounts with auto-generated or custom passwords.
+ * Clients are automatically assigned to the current partner and given the Client role.
+ * Includes welcome email functionality (to be implemented).
+ */
 class AddClient extends Component
 {
+    const PASSWORD_LENGTH = 12;
+
     public string $name = '';
     public string $email = '';
     public string $password = '';
@@ -27,7 +36,7 @@ class AddClient extends Component
 
     public function generatePassword()
     {
-        $this->password = Str::password(12, true, true, false, false);
+        $this->password = Str::random(self::PASSWORD_LENGTH);
         $this->autoGeneratePassword = true;
     }
 

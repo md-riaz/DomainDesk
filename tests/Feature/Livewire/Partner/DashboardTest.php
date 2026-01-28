@@ -133,6 +133,7 @@ class DashboardTest extends TestCase
         Domain::factory()->create([
             'partner_id' => $otherPartner->id,
             'client_id' => $otherClient->id,
+            'name' => 'other-domain-' . uniqid() . '.com',
         ]);
 
         $this->actingAs($this->partnerUser);
