@@ -37,9 +37,12 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('admin')->name('admin.')
 
 // Partner routes (with partner context)
 Route::middleware(['auth', 'role:partner', 'partner.context'])->prefix('partner')->name('partner.')->group(function () {
-    Route::get('/dashboard', function () {
-        return 'Partner Dashboard';
-    })->name('dashboard');
+    Route::get('/dashboard', \App\Livewire\Partner\Dashboard::class)->name('dashboard');
+    
+    // Client routes
+    Route::get('/clients', \App\Livewire\Partner\Client\ClientList::class)->name('clients.list');
+    Route::get('/clients/add', \App\Livewire\Partner\Client\AddClient::class)->name('clients.add');
+    Route::get('/clients/{clientId}', \App\Livewire\Partner\Client\ClientDetail::class)->name('clients.show');
 });
 
 // Client routes (with partner context)
