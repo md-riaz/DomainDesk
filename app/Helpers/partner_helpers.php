@@ -3,6 +3,7 @@
 use App\Models\Partner;
 use App\Models\PartnerBranding;
 use App\Models\Wallet;
+use App\Models\AuditLog;
 use App\Services\PartnerContextService;
 use App\Services\PricingService;
 
@@ -63,5 +64,29 @@ if (!function_exists('hasPartner')) {
     function hasPartner(): bool
     {
         return partnerContext()->hasPartner();
+    }
+}
+
+if (!function_exists('auditLog')) {
+    /**
+     * Create an audit log entry
+     */
+    function auditLog(
+        string $action,
+        $auditable = null,
+        ?array $oldValues = null,
+        ?array $newValues = null
+    ): AuditLog {
+        return AuditLog::create([
+            'user_id' => auth()->id(),
+            'partner_id' => session('partner_id') ?? session('impersonating_partner_id'),
+            'action' => $action,
+            'auditable_type' => $auditable ? get_class($auditable) : null,
+            'auditable_id' => $auditable ? $auditable->id : null,
+            'old_values' => $oldValues,
+            'new_values' => $newValues,
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->userAgent(),
+        ]);
     }
 }

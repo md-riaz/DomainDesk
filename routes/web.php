@@ -30,9 +30,38 @@ Route::post('/logout', function () {
 
 // Super Admin routes (no partner context)
 Route::middleware(['auth', 'role:super_admin'])->prefix('admin')->name('admin.')->group(function () {
-    Route::get('/dashboard', function () {
-        return 'Super Admin Dashboard';
-    })->name('dashboard');
+    Route::get('/dashboard', \App\Livewire\Admin\Dashboard::class)->name('dashboard');
+    
+    // Partner routes
+    Route::get('/partners', \App\Livewire\Admin\Partner\PartnerList::class)->name('partners.list');
+    Route::get('/partners/add', \App\Livewire\Admin\Partner\AddPartner::class)->name('partners.add');
+    Route::get('/partners/{partnerId}', \App\Livewire\Admin\Partner\PartnerDetail::class)->name('partners.show');
+    
+    // Partner actions
+    Route::get('/partners/{partnerId}/impersonate', function ($partnerId) {
+        $partner = \App\Models\Partner::withoutGlobalScopes()->findOrFail($partnerId);
+        session(['impersonating_partner_id' => $partner->id]);
+        
+        auditLog('Started impersonating partner', $partner);
+            
+        return redirect()->route('partner.dashboard');
+    })->name('partners.impersonate');
+    
+    Route::get('/partners/stop-impersonate', function () {
+        $partnerId = session('impersonating_partner_id');
+        
+        if ($partnerId) {
+            $partner = \App\Models\Partner::withoutGlobalScopes()->find($partnerId);
+            
+            if ($partner) {
+                auditLog('Stopped impersonating partner', $partner);
+            }
+        }
+        
+        session()->forget('impersonating_partner_id');
+        
+        return redirect()->route('admin.dashboard');
+    })->name('partners.stop-impersonate');
 });
 
 // Partner routes (with partner context)
