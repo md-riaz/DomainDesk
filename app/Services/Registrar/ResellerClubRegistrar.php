@@ -981,13 +981,4 @@ class ResellerClubRegistrar extends AbstractRegistrar
         }, ['domain' => $domain]);
     }
 
-    /**
-     * Get domain order ID (helper method).
-     */
-    protected function getDomainOrderId(string $domain): ?int
-    {
-        // This would typically look up the order ID from database or API
-        // For now, we'll assume it's stored in domain metadata
-        return null;
-    }
 }

@@ -10,6 +10,7 @@ enum DnsRecordType: string
     case MX = 'MX';
     case TXT = 'TXT';
     case NS = 'NS';
+    case SRV = 'SRV';
 
     public function label(): string
     {
@@ -18,6 +19,19 @@ enum DnsRecordType: string
 
     public function supportsPriority(): bool
     {
-        return $this === self::MX;
+        return in_array($this, [self::MX, self::SRV]);
+    }
+
+    public function getColor(): string
+    {
+        return match($this) {
+            self::A => 'blue',
+            self::AAAA => 'indigo',
+            self::CNAME => 'purple',
+            self::MX => 'green',
+            self::TXT => 'yellow',
+            self::NS => 'red',
+            self::SRV => 'pink',
+        };
     }
 }

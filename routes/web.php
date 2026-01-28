@@ -2,6 +2,8 @@
 
 use App\Livewire\Auth\Login;
 use App\Livewire\Auth\Register;
+use App\Livewire\Client\Domain\ManageDns;
+use App\Livewire\Client\Domain\ManageNameservers;
 use App\Livewire\Client\Domain\RegisterDomain;
 use App\Livewire\Client\Domain\RenewDomain;
 use App\Livewire\Client\Domain\SearchDomain;
@@ -51,6 +53,8 @@ Route::middleware(['auth', 'role:client', 'partner.context'])->prefix('client')-
     Route::get('/domains/transfer', \App\Livewire\Client\Domain\TransferDomain::class)->name('domains.transfer');
     Route::get('/domains/{domain}/renew', RenewDomain::class)->name('domains.renew');
     Route::get('/domains/{domain}/transfer-status', \App\Livewire\Client\Domain\TransferStatus::class)->name('domains.transfer-status');
+    Route::get('/domains/{domain}/nameservers', ManageNameservers::class)->name('domains.nameservers');
+    Route::get('/domains/{domain}/dns', ManageDns::class)->name('domains.dns');
     
     // Placeholder for domain details page (referenced in RenewDomain component)
     Route::get('/domains/{domain}', function ($domainId) {

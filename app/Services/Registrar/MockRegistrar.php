@@ -956,33 +956,6 @@ class MockRegistrar extends AbstractRegistrar
     }
 
     /**
-     * Get transfer state from cache.
-     */
-    protected function getTransferState(string $domain): ?array
-    {
-        $key = $this->statePrefix . 'transfer:' . $domain;
-        return Cache::get($key);
-    }
-
-    /**
-     * Save transfer state to cache.
-     */
-    protected function saveTransferState(string $domain, array $state): void
-    {
-        $key = $this->statePrefix . 'transfer:' . $domain;
-        Cache::put($key, $state, $this->stateTtl);
-    }
-
-    /**
-     * Delete transfer state from cache.
-     */
-    protected function deleteTransferState(string $domain): void
-    {
-        $key = $this->statePrefix . 'transfer:' . $domain;
-        Cache::forget($key);
-    }
-
-    /**
      * Get transfer status message.
      */
     protected function getTransferStatusMessage(string $status): string
