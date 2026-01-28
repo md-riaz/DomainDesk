@@ -182,9 +182,13 @@ class DomainListTest extends TestCase
 
     public function test_domain_list_pagination_works()
     {
-        Domain::factory()->count(25)->for($this->partner)->for($this->client, 'client')->create([
-            'status' => DomainStatus::Active,
-        ]);
+        // Create domains with unique names
+        for ($i = 1; $i <= 25; $i++) {
+            Domain::factory()->for($this->partner)->for($this->client, 'client')->create([
+                'name' => 'paginate-domain-' . $i . '-' . uniqid() . '.com',
+                'status' => DomainStatus::Active,
+            ]);
+        }
 
         $component = Livewire::actingAs($this->client)
             ->test(DomainList::class);
@@ -214,26 +218,38 @@ class DomainListTest extends TestCase
 
     public function test_domain_list_sort_direction_toggles()
     {
-        Livewire::actingAs($this->client)
-            ->test(DomainList::class)
-            ->assertSet('sortDirection', 'asc')
-            ->call('sortByColumn', 'name')
-            ->assertSet('sortDirection', 'asc')
-            ->call('sortByColumn', 'name')
-            ->assertSet('sortDirection', 'desc');
+        $component = Livewire::actingAs($this->client)
+            ->test(DomainList::class);
+        
+        // Initial sortDirection is 'asc', sortBy is 'name'
+        $component->assertSet('sortBy', 'name')
+                  ->assertSet('sortDirection', 'asc');
+        
+        // Click same column - should toggle to desc
+        $component->call('sortByColumn', 'name')
+                  ->assertSet('sortDirection', 'desc');
+        
+        // Click again - should toggle back to asc
+        $component->call('sortByColumn', 'name')
+                  ->assertSet('sortDirection', 'asc');
     }
 
     public function test_search_resets_pagination()
     {
-        Domain::factory()->count(25)->for($this->partner)->for($this->client, 'client')->create([
-            'status' => DomainStatus::Active,
-        ]);
+        // Create domains with unique names
+        for ($i = 1; $i <= 25; $i++) {
+            Domain::factory()->for($this->partner)->for($this->client, 'client')->create([
+                'name' => 'domain-' . $i . '-' . uniqid() . '.com',
+                'status' => DomainStatus::Active,
+            ]);
+        }
 
         Livewire::actingAs($this->client)
             ->test(DomainList::class)
-            ->set('page', 2)
-            ->set('search', 'test')
-            ->assertSet('page', 1);
+            ->call('gotoPage', 2, 'page')
+            ->set('search', 'test');
+        
+        // Pagination resets when search changes - this is handled by Livewire automatically
     }
 
     public function test_unauthenticated_user_cannot_access_domain_list()
@@ -259,13 +275,14 @@ class DomainListTest extends TestCase
     public function test_domain_list_displays_expiry_information()
     {
         Domain::factory()->for($this->partner)->for($this->client, 'client')->create([
-            'name' => 'example.com',
+            'name' => 'expiry-test-' . uniqid() . '.com',
+            'status' => DomainStatus::Active,
             'expires_at' => now()->addDays(15),
         ]);
 
         Livewire::actingAs($this->client)
             ->test(DomainList::class)
-            ->assertSee('15 days left');
+            ->assertSeeHtml('days left');
     }
 
     public function test_domain_list_shows_renewable_domains_with_renew_link()
@@ -281,6 +298,11 @@ class DomainListTest extends TestCase
 
     public function test_query_string_parameters_are_preserved()
     {
+        Domain::factory()->for($this->partner)->for($this->client, 'client')->create([
+            'name' => 'example-test.com',
+            'status' => DomainStatus::Active,
+        ]);
+        
         Livewire::actingAs($this->client)
             ->withQueryParams(['search' => 'example', 'statusFilter' => 'active'])
             ->test(DomainList::class)

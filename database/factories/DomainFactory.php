@@ -19,12 +19,23 @@ class DomainFactory extends Factory
      */
     public function definition(): array
     {
+        // Only use statuses that are in the database enum constraint
+        $validStatuses = [
+            DomainStatus::PendingRegistration,
+            DomainStatus::Active,
+            DomainStatus::Expired,
+            DomainStatus::GracePeriod,
+            DomainStatus::Redemption,
+            DomainStatus::Suspended,
+            DomainStatus::TransferredOut,
+        ];
+        
         return [
             'name' => fake()->domainName(),
             'client_id' => User::factory(),
             'partner_id' => Partner::factory(),
             'registrar_id' => null,
-            'status' => fake()->randomElement(DomainStatus::cases()),
+            'status' => fake()->randomElement($validStatuses),
             'registered_at' => fake()->dateTimeBetween('-2 years', 'now'),
             'expires_at' => fake()->dateTimeBetween('now', '+2 years'),
             'auto_renew' => fake()->boolean(70),
