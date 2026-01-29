@@ -14,42 +14,168 @@ A comprehensive SaaS platform built with Laravel 12 and Livewire 4, enabling par
 
 ## 📸 Platform Preview
 
-### Landing Page
+### Landing Page - White-Label Partner System
 ![Landing Page](https://github.com/user-attachments/assets/477f77a1-cf1c-468e-8bd8-53fc45bdb826)
 
-Clean, white-label domain search landing page with BDT currency support. Features domain search, popular TLD extensions, and key platform benefits.
+Professional landing page showcasing the white-label partner system. Features include role-based demo credentials, multi-tenant architecture overview, and key platform capabilities.
+
+---
+
+### Role-Based Access
+
+#### 🔐 Super Admin Role
+
+The Super Admin has complete system control and manages all partners.
+
+**Admin Dashboard**
+![Admin Dashboard](https://github.com/user-attachments/assets/695e2af0-63e1-4c4f-a06f-4bb7a6f278d5)
+
+Comprehensive dashboard with system-wide metrics including total partners, clients, domains, and revenue tracking. Real-time monitoring of platform health and activity.
+
+**Partner Management**
+![Partner Management](https://github.com/user-attachments/assets/1410fe7b-e273-4116-83c5-299308863f2d)
+
+Complete partner management interface with filtering, sorting, and detailed views. Manage partner status, wallet balances, and view business metrics at a glance.
+
+**Admin Capabilities:**
+- Create and manage partner accounts
+- Configure system-wide settings
+- Manage registrar integrations (ResellerClub, BTCL)
+- Set TLD pricing and availability
+- Monitor system health and audit logs
+- Adjust partner wallet balances
+- View comprehensive analytics
+
+---
+
+#### 👥 Partner Role
+
+Partners operate as resellers with white-label capabilities.
+
+**Partner Dashboard**
+![Partner Dashboard - Coming Soon]
+
+Business metrics dashboard showing revenue, client count, domain statistics, and wallet balance. Track performance and manage your reseller business effectively.
+
+**Client Management**
+![Client Management - Coming Soon]
+
+Create and manage client accounts, suspend/activate users, and monitor client activity. Complete control over your customer base.
+
+**Branding Configuration**
+![Branding Configuration - Coming Soon]
+
+Customize your brand identity with custom logos, color schemes, and email templates. Create a unique experience for your clients.
+
+**Pricing Rules Management**
+![Pricing Rules - Coming Soon]
+
+Set custom pricing with fixed or percentage-based markup for each TLD. Control your profit margins and competitive positioning.
+
+**Partner Capabilities:**
+- Create and manage client accounts
+- Customize white-label branding (logo, colors, domain)
+- Set partner-specific pricing rules and markups
+- View wallet balance and transaction history
+- Manage domain registrations for clients
+- Access business analytics and reports
+- Configure custom email templates
+
+---
+
+#### 👤 Client Role
+
+Clients are end-users who purchase and manage domains through partners.
+
+**Client Dashboard**
+![Client Dashboard - Coming Soon]
+
+User-friendly dashboard displaying active domains, upcoming renewals, recent invoices, and quick access to domain management tools.
+
+**Domain Search**
+![Domain Search - Coming Soon]
+
+Advanced domain search with bulk lookup, availability checking, and instant pricing. Search multiple domains simultaneously.
+
+**Domain Management**
+![Domain Management - Coming Soon]
+
+Comprehensive domain management interface for renewals, transfers, and domain settings. Easy-to-use controls for all domain operations.
+
+**DNS Management**
+![DNS Management - Coming Soon]
+
+Manage DNS records, nameservers, and domain configuration. Full control over A, AAAA, CNAME, MX, TXT, and other record types.
+
+**Invoice History**
+![Invoice History - Coming Soon]
+
+Track all invoices, payments, and transaction history. Download invoices and view detailed billing information.
+
+**Client Capabilities:**
+- Search and register domains
+- Manage domain renewals and transfers
+- Configure DNS records and nameservers
+- View and pay invoices
+- Access support tickets
+- Manage account settings
+- View transaction history
+
+---
 
 ### Login Page
 ![Login Page](https://github.com/user-attachments/assets/95c66635-e098-49b4-b3e2-254dbe47a816)
 
-Clean and intuitive login interface with white-label partner branding support.
+Clean and intuitive login interface with white-label partner branding support. Automatic role detection and routing to appropriate dashboard.
 
-### Admin Dashboard
-![Admin Dashboard](https://github.com/user-attachments/assets/695e2af0-63e1-4c4f-a06f-4bb7a6f278d5)
-
-Comprehensive admin dashboard with system-wide metrics, partner management, and system health monitoring.
-
-### Partner Management
-![Partner Management](https://github.com/user-attachments/assets/1410fe7b-e273-4116-83c5-299308863f2d)
-
-Partner management interface showing all partners, their status, clients, domains, and wallet balance with filtering and sorting capabilities.
+---
 
 ### Demo Credentials
 
 For testing purposes, the following demo accounts are created by the seeder:
 
-**Super Admin**
-- Email: `admin@domaindesk.com`
-- Password: `password`
-- Access: Full system control, partner management, registrar configuration
+#### **Super Admin Access**
+```
+Email:    admin@domaindesk.com
+Password: password
+Role:     Super Admin
+```
+**Full System Access:**
+- Partner management and creation
+- System-wide configuration
+- Registrar management (ResellerClub, BTCL)
+- TLD pricing configuration
+- System health monitoring
+- Audit log access
 
-**Partner Accounts**
-- Created via Admin Panel with wallet balance and branding configuration
-- Can manage clients, domains, pricing rules, and view business metrics
+#### **Partner Access**
+```
+Email:    partner@example.com
+Password: password
+Role:     Partner (Reseller)
+```
+**Partner Management Access:**
+- Client account management
+- White-label branding configuration
+- Custom pricing rules
+- Wallet balance and transactions
+- Domain management for clients
+- Business analytics
 
-**Client Accounts**
-- Created by Partners or via registration
-- Can search/register domains, manage DNS, view invoices
+#### **Client Access**
+```
+Email:    client@example.com
+Password: password
+Role:     Client (End User)
+```
+**Client Portal Access:**
+- Domain search and registration
+- DNS and nameserver management
+- Domain renewals and transfers
+- Invoice viewing and payment
+- Support ticket system
+
+> **Note:** Partners can create additional client accounts. Each partner operates in complete isolation with their own branding and client base.
 
 ### Key Features Showcased
 
