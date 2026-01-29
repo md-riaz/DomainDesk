@@ -112,11 +112,17 @@ if (!function_exists('formatCurrency')) {
     {
         $currency = $currency ?? config('app.currency', 'BDT');
         
-        if ($currency === 'BDT') {
-            return formatBDT($amountInCents);
-        }
+        $amount = $amountInCents / 100;
+        $formatted = number_format($amount, 2);
         
-        // Default to BDT if currency not supported
-        return formatBDT($amountInCents);
+        // Support multiple currencies
+        return match($currency) {
+            'BDT' => "৳{$formatted}",
+            'USD' => "\${$formatted}",
+            'EUR' => "€{$formatted}",
+            'GBP' => "£{$formatted}",
+            'INR' => "₹{$formatted}",
+            default => "{$currency} {$formatted}",
+        };
     }
 }

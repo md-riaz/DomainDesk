@@ -279,7 +279,7 @@ class DomainSearchService
 
             return [
                 'register' => $price,
-                'currency' => 'BDT',
+                'currency' => config('app.currency', 'BDT'),
                 'years' => $years,
             ];
 

@@ -60,16 +60,18 @@
 
                         <!-- Domain Search Box -->
                         <div class="max-w-2xl mx-auto">
-                            <div class="flex flex-col sm:flex-row gap-4">
+                            <form action="{{ route('client.domains.search') }}" method="GET" class="flex flex-col sm:flex-row gap-4">
                                 <input 
                                     type="text" 
+                                    name="query"
                                     placeholder="Enter your domain name..."
                                     class="flex-1 px-6 py-4 text-lg border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:text-white"
+                                    required
                                 />
-                                <button class="px-8 py-4 text-lg font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg whitespace-nowrap">
+                                <button type="submit" class="px-8 py-4 text-lg font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg whitespace-nowrap">
                                     Search Domain
                                 </button>
-                            </div>
+                            </form>
                         </div>
 
                         <!-- Popular TLDs -->
