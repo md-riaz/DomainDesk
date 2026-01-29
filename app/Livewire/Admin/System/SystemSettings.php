@@ -59,7 +59,7 @@ class SystemSettings extends Component
         $this->site_name = Setting::get('site_name', 'DomainDesk');
         $this->admin_email = Setting::get('admin_email', config('mail.from.address'));
         $this->default_timezone = Setting::get('default_timezone', 'UTC');
-        $this->default_currency = Setting::get('default_currency', 'USD');
+        $this->default_currency = Setting::get('default_currency', 'BDT');
         $this->date_format = Setting::get('date_format', 'Y-m-d');
         $this->time_format = Setting::get('time_format', 'H:i:s');
         
@@ -220,7 +220,7 @@ class SystemSettings extends Component
             $this->site_name = 'DomainDesk';
             $this->admin_email = config('mail.from.address');
             $this->default_timezone = 'UTC';
-            $this->default_currency = 'USD';
+            $this->default_currency = 'BDT';
             $this->date_format = 'Y-m-d';
             $this->time_format = 'H:i:s';
         } elseif ($this->activeTab === 'email') {
@@ -252,7 +252,7 @@ class SystemSettings extends Component
     public function render()
     {
         $timezones = timezone_identifiers_list();
-        $currencies = ['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'INR'];
+        $currencies = ['BDT', 'USD', 'EUR', 'GBP', 'CAD', 'AUD', 'INR'];
 
         return view('livewire.admin.system.system-settings', [
             'timezones' => $timezones,

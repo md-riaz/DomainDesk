@@ -89,7 +89,7 @@
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label for="newPrice" class="block text-sm font-medium text-gray-700">Price (USD)</label>
+                        <label for="newPrice" class="block text-sm font-medium text-gray-700">Price (BDT)</label>
                         <input
                             type="number"
                             wire:model="newPrice"

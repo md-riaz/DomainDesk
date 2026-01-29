@@ -123,4 +123,16 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Application Currency
+    |--------------------------------------------------------------------------
+    |
+    | This value is the default currency used throughout the application.
+    | This can be overridden by system settings or partner-specific settings.
+    |
+    */
+
+    'currency' => env('APP_CURRENCY', 'BDT'),
+
 ];

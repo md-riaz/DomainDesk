@@ -51,7 +51,7 @@
                 </button>
                 <button wire:click="applyTemplate('add_5_dollars')" type="button" class="flex items-center justify-center px-4 py-3 border-2 border-green-300 dark:border-green-700 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/20 transition">
                     <div class="text-center">
-                        <p class="font-semibold text-gray-900 dark:text-white">Add $5 to All</p>
+                        <p class="font-semibold text-gray-900 dark:text-white">Add ৳500 to All</p>
                         <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Fixed amount</p>
                     </div>
                 </button>
