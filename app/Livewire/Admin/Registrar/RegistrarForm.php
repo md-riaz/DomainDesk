@@ -67,8 +67,8 @@ class RegistrarForm extends Component
             $this->is_default = $this->registrar->is_default;
         } else {
             $this->credentialsJson = json_encode([
-                'api_key' => '',
-                'user_id' => '',
+                'username' => '',
+                'password' => '',
             ], JSON_PRETTY_PRINT);
         }
     }

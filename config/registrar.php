@@ -112,11 +112,10 @@ return [
         ],
 
         'btcl' => [
-            'api_url' => env('BTCL_API_URL', 'https://api.btcldomains.com/api'),
-            'test_mode' => env('BTCL_TEST_MODE', false),
+            'api_url' => env('BTCL_API_URL', 'https://141.lyre.us/rsdom'),
             'timeout' => 45,
             'rate_limit' => [
-                'max_attempts' => 120, // Higher limit for production registrar
+                'max_attempts' => 60, // Conservative limit for BTCL
                 'decay_minutes' => 1,
             ],
             'default_nameservers' => [
@@ -163,12 +162,14 @@ return [
             'auto_renew' => true,
         ],
         'btcl' => [
-            'dns_management' => true,
-            'whois_privacy' => true,
-            'domain_forwarding' => true,
-            'email_forwarding' => true,
+            'dns_management' => false, // BTCL does not support DNS record management
+            'whois_privacy' => false,  // BTCL does not support WHOIS privacy
+            'domain_forwarding' => false,
+            'email_forwarding' => false,
             'dnssec' => false,
-            'auto_renew' => true,
+            'auto_renew' => false,
+            'domain_transfer' => false, // BTCL does not support domain transfers
+            'domain_lock' => false,     // BTCL does not support domain locking
         ],
     ],
 

@@ -10,32 +10,32 @@ use Illuminate\Http\Client\RequestException;
 /**
  * BTCL Domain Registrar Integration
  * 
- * Implements the RegistrarInterface for BTCL HTTP API following Domain Reseller API-V7.
+ * Implements the RegistrarInterface for BTCL Domain API.
+ * 
+ * API Documentation: BTCL Domain Reseller API
+ * Base URL: https://141.lyre.us/rsdom/
  * 
  * Features:
- * - Domain registration and management
- * - Contact management (WHOIS)
+ * - Domain availability check
+ * - Domain reservation (20 min window)
+ * - Domain registration (.bd domains)
+ * - Domain renewal
  * - Nameserver management
- * - DNS record management
- * - Domain transfer operations
- * - Domain lock/unlock
+ * - Domain information retrieval
+ * - Account balance check
+ * - Transaction history
  */
 class BTCLRegistrar extends AbstractRegistrar
 {
     /**
-     * API auth user ID.
+     * API username for Basic Auth.
      */
-    protected string $authUserId;
+    protected string $username;
 
     /**
-     * API key.
+     * API password for Basic Auth.
      */
-    protected string $apiKey;
-
-    /**
-     * Test mode flag.
-     */
-    protected bool $testMode = false;
+    protected string $password;
 
     /**
      * Default nameservers.
@@ -43,15 +43,33 @@ class BTCLRegistrar extends AbstractRegistrar
     protected array $defaultNameservers = [];
 
     /**
-     * BTCL order statuses.
+     * BTCL response codes.
      */
-    protected array $orderStatuses = [
-        'Active' => 'active',
-        'Suspended' => 'suspended',
-        'Pending' => 'pending',
-        'Cancelled' => 'cancelled',
-        'Expired' => 'expired',
-        'Deleted' => 'deleted',
+    protected array $responseCodes = [
+        2000 => 'Operation successful',
+        2001 => 'Domain already registered',
+        2004 => 'Domain already reserved by you',
+        2005 => 'Domain reserved by others',
+        4000 => 'Domain contains forbidden keyword',
+        4001 => 'Domain contains reserved word',
+        4002 => 'Invalid domain format',
+        4003 => 'Domain length invalid',
+        4004 => 'Domain not found',
+        4005 => 'Domain already expired – restore required',
+        4006 => 'Invalid registration/renewal years',
+        4007 => 'Domain contains uncensored word',
+        4008 => 'Invalid NS record',
+        4009 => 'Unauthorized domain access',
+        4010 => 'Domain is parked, cannot update NS record',
+        4011 => 'Domain not active',
+        4012 => 'Invalid JSON',
+        4013 => 'Domain not allowed to renew',
+        4014 => 'Rate not found',
+        4015 => 'Invalid API key/secret (authentication fail)',
+        4016 => 'Account inactive',
+        4020 => 'Insufficient credit',
+        4030 => 'Reseller not allowed for this domain/category',
+        5000 => 'Internal server error',
     ];
 
     /**
@@ -59,22 +77,16 @@ class BTCLRegistrar extends AbstractRegistrar
      */
     protected function initialize(): void
     {
-        $this->authUserId = $this->credentials['auth_userid'] ?? '';
-        $this->apiKey = $this->credentials['api_key'] ?? '';
-        $this->testMode = $this->config['test_mode'] ?? false;
+        $this->username = $this->credentials['username'] ?? '';
+        $this->password = $this->credentials['password'] ?? '';
         $this->defaultNameservers = $this->config['default_nameservers'] ?? [
             'ns1.btcl.com.bd',
             'ns2.btcl.com.bd',
         ];
 
-        // Use test API URL if in test mode
-        if ($this->testMode && !isset($this->config['api_url'])) {
-            $this->apiUrl = 'https://test.btcldomains.com/api';
-        }
-
-        if (empty($this->authUserId) || empty($this->apiKey)) {
+        if (empty($this->username) || empty($this->password)) {
             throw new RegistrarException(
-                message: 'BTCL credentials not configured',
+                message: 'BTCL credentials not configured. Please provide username and password.',
                 registrarName: $this->name,
                 errorDetails: ['missing_credentials' => true]
             );
@@ -94,26 +106,42 @@ class BTCLRegistrar extends AbstractRegistrar
                 "availability_{$domain}",
                 30,
                 function () use ($domain) {
-                    $response = $this->makeRequest('/domains/available.json', 'GET', [
-                        'domain-name' => $this->extractDomainName($domain),
-                        'tlds' => [$this->extractTld($domain)],
+                    $response = $this->makeRequest('domain_availability.do', [
+                        'domain' => $domain,
                     ]);
 
-                    // BTCL returns an object with TLD as key (following API-V7 standard)
-                    $tld = $this->extractTld($domain);
-                    
-                    if (!isset($response[$tld])) {
-                        throw RegistrarException::invalidData(
-                            $this->name,
-                            'Unexpected API response format',
-                            ['response' => $response]
-                        );
+                    // BTCL returns responseCode 2000 for available, 2001 for registered
+                    if (isset($response['responseCode']) || isset($response['response_code'])) {
+                        $code = $response['responseCode'] ?? $response['response_code'];
+                        return $code == 2000;
                     }
 
-                    return $response[$tld]['status'] === 'available';
+                    // Fallback to status check
+                    return ($response['status'] ?? '') === 'success';
                 }
             );
         }, ['domain' => $domain]);
+    }
+
+    /**
+     * Reserve a domain (BTCL specific - required before registration).
+     * Domain will be reserved for 20 minutes.
+     */
+    protected function reserveDomain(string $domain): array
+    {
+        $response = $this->makeRequest('reserve.do', [
+            'domain' => $domain,
+        ]);
+
+        if (($response['status'] ?? '') !== 'success') {
+            throw RegistrarException::apiError(
+                $this->name,
+                $response['message'] ?? 'Failed to reserve domain',
+                ['response' => $response]
+            );
+        }
+
+        return $response;
     }
 
     /**
@@ -126,34 +154,46 @@ class BTCLRegistrar extends AbstractRegistrar
             $this->validateDomain($data['domain']);
             $this->validateYears($data['years']);
 
-            // Create or get customer contact IDs
-            $contactIds = $this->prepareContactIds($data['contacts']);
+            // First, reserve the domain (BTCL requires this)
+            try {
+                $this->reserveDomain($data['domain']);
+            } catch (\Exception $e) {
+                // If already reserved by us, continue
+                if (!str_contains($e->getMessage(), 'already reserved by you')) {
+                    throw $e;
+                }
+            }
 
+            // Extract contact information
+            $registrant = $data['contacts']['registrant'] ?? $data['contacts']['admin'] ?? [];
+            
             // Prepare nameservers
             $nameservers = $data['nameservers'] ?? $this->defaultNameservers;
             $this->validateNameservers($nameservers);
 
+            // Prepare registration data
+            $requestData = [
+                'domain' => $data['domain'],
+                'year' => $data['years'],
+                'nameServers' => array_values($nameservers), // Ensure indexed array
+                'fullName' => $registrant['name'] ?? $registrant['organization'] ?? '',
+                'nid' => $registrant['nid'] ?? $registrant['passport'] ?? '',
+                'email' => $registrant['email'] ?? '',
+                'contactAddress' => $this->formatAddress($registrant),
+                'contactNumber' => $this->formatPhone($registrant['phone'] ?? ''),
+            ];
+
             // Register domain
-            $response = $this->makeRequest('/domains/register.json', 'POST', [
-                'domain-name' => $this->extractDomainName($data['domain']),
-                'years' => $data['years'],
-                'ns' => $nameservers,
-                'customer-id' => $this->authUserId,
-                'reg-contact-id' => $contactIds['registrant'],
-                'admin-contact-id' => $contactIds['admin'] ?? $contactIds['registrant'],
-                'tech-contact-id' => $contactIds['tech'] ?? $contactIds['registrant'],
-                'billing-contact-id' => $contactIds['billing'] ?? $contactIds['registrant'],
-                'invoice-option' => 'NoInvoice',
-                'protect-privacy' => $data['whois_privacy'] ?? false,
-            ]);
+            $response = $this->makeRequest('domain_buy.do', $requestData);
 
             return $this->standardizeResponse([
                 'success' => true,
                 'domain' => $data['domain'],
-                'order_id' => $response['entityid'] ?? null,
-                'expiry_date' => $response['endtime'] ?? null,
+                'transaction_id' => $response['transactionId'] ?? null,
+                'balance' => $response['currentBalance'] ?? null,
+                'amount' => $response['billAmt'] ?? null,
                 'status' => 'active',
-                'message' => 'Domain registered successfully',
+                'message' => $response['message'] ?? 'Domain registered successfully',
             ]);
         }, ['domain' => $data['domain'] ?? null]);
     }
@@ -167,124 +207,69 @@ class BTCLRegistrar extends AbstractRegistrar
             $this->validateDomain($domain);
             $this->validateYears($years);
 
-            $orderId = $this->getOrderId($domain);
-
-            $response = $this->makeRequest('/domains/renew.json', 'POST', [
-                'order-id' => $orderId,
-                'years' => $years,
-                'exp-date' => time(), // Current timestamp
-                'invoice-option' => 'NoInvoice',
+            $response = $this->makeRequest('domain_renew.do', [
+                'domain' => $domain,
+                'year' => $years,
             ]);
 
             return $this->standardizeResponse([
                 'success' => true,
                 'domain' => $domain,
-                'order_id' => $orderId,
                 'years' => $years,
-                'expiry_date' => $response['endtime'] ?? null,
-                'message' => 'Domain renewed successfully',
+                'transaction_id' => $response['transactionId'] ?? null,
+                'balance' => $response['currentBalance'] ?? null,
+                'amount' => $response['billAmt'] ?? null,
+                'message' => $response['message'] ?? 'Domain renewed successfully',
             ]);
         }, ['domain' => $domain, 'years' => $years]);
     }
 
     /**
-     * Transfer a domain.
+     * Transfer a domain - NOT SUPPORTED by BTCL.
      */
     public function transfer(string $domain, string $authCode): array
     {
-        return $this->executeApiCall('transfer', function () use ($domain, $authCode) {
-            $this->validateDomain($domain);
-
-            $response = $this->makeRequest('/domains/transfer.json', 'POST', [
-                'domain-name' => $this->extractDomainName($domain),
-                'auth-code' => $authCode,
-                'ns' => $this->defaultNameservers,
-                'customer-id' => $this->authUserId,
-                'invoice-option' => 'NoInvoice',
-            ]);
-
-            return $this->standardizeResponse([
-                'success' => true,
-                'domain' => $domain,
-                'order_id' => $response['entityid'] ?? null,
-                'status' => 'pending',
-                'message' => 'Transfer initiated successfully',
-            ]);
-        }, ['domain' => $domain]);
+        throw new RegistrarException(
+            message: 'Domain transfers are not supported by BTCL registrar',
+            registrarName: $this->name,
+            errorDetails: ['feature' => 'transfer', 'supported' => false]
+        );
     }
 
     /**
-     * Get transfer status.
+     * Get transfer status - NOT SUPPORTED by BTCL.
      */
     public function getTransferStatus(string $domain): array
     {
-        return $this->executeApiCall('getTransferStatus', function () use ($domain) {
-            $this->validateDomain($domain);
-
-            $orderId = $this->getOrderId($domain);
-
-            $response = $this->makeRequest("/domains/orderid.json", 'GET', [
-                'order-id' => $orderId,
-                'options' => ['All'],
-            ]);
-
-            $status = $response['currentstatus'] ?? 'unknown';
-
-            return $this->standardizeResponse([
-                'success' => true,
-                'domain' => $domain,
-                'status' => $this->mapOrderStatus($status),
-                'message' => "Transfer status: {$status}",
-            ]);
-        }, ['domain' => $domain]);
+        throw new RegistrarException(
+            message: 'Domain transfers are not supported by BTCL registrar',
+            registrarName: $this->name,
+            errorDetails: ['feature' => 'transfer', 'supported' => false]
+        );
     }
 
     /**
-     * Cancel a transfer.
+     * Cancel a transfer - NOT SUPPORTED by BTCL.
      */
     public function cancelTransfer(string $domain): array
     {
-        return $this->executeApiCall('cancelTransfer', function () use ($domain) {
-            $this->validateDomain($domain);
-
-            $orderId = $this->getOrderId($domain);
-
-            $response = $this->makeRequest('/domains/cancel-transfer.json', 'POST', [
-                'order-id' => $orderId,
-            ]);
-
-            return $this->standardizeResponse([
-                'success' => true,
-                'domain' => $domain,
-                'message' => 'Transfer cancelled successfully',
-            ]);
-        }, ['domain' => $domain]);
+        throw new RegistrarException(
+            message: 'Domain transfers are not supported by BTCL registrar',
+            registrarName: $this->name,
+            errorDetails: ['feature' => 'transfer', 'supported' => false]
+        );
     }
 
     /**
-     * Get auth code for transfer out.
+     * Get auth code - NOT SUPPORTED by BTCL.
      */
     public function getAuthCode(string $domain): array
     {
-        return $this->executeApiCall('getAuthCode', function () use ($domain) {
-            $this->validateDomain($domain);
-
-            $orderId = $this->getOrderId($domain);
-
-            $response = $this->makeRequest('/domains/details.json', 'GET', [
-                'order-id' => $orderId,
-                'options' => ['OrderDetails'],
-            ]);
-
-            $authCode = $response['domsecret'] ?? null;
-
-            return $this->standardizeResponse([
-                'success' => true,
-                'domain' => $domain,
-                'auth_code' => $authCode,
-                'message' => 'Auth code retrieved successfully',
-            ]);
-        }, ['domain' => $domain]);
+        throw new RegistrarException(
+            message: 'Auth codes are not supported by BTCL registrar',
+            registrarName: $this->name,
+            errorDetails: ['feature' => 'auth_code', 'supported' => false]
+        );
     }
 
     /**
@@ -296,120 +281,85 @@ class BTCLRegistrar extends AbstractRegistrar
             $this->validateDomain($domain);
             $this->validateNameservers($nameservers);
 
-            $orderId = $this->getOrderId($domain);
-
-            $response = $this->makeRequest('/domains/modify-ns.json', 'POST', [
-                'order-id' => $orderId,
-                'ns' => $nameservers,
+            $response = $this->makeRequest('domain_update_ns.do', [
+                'domain' => $domain,
+                'nameServers' => array_values($nameservers), // Ensure indexed array
             ]);
 
             return $this->standardizeResponse([
                 'success' => true,
                 'domain' => $domain,
                 'nameservers' => $nameservers,
-                'message' => 'Nameservers updated successfully',
+                'message' => $response['message'] ?? 'Nameservers updated successfully',
             ]);
         }, ['domain' => $domain, 'nameservers' => $nameservers]);
     }
 
     /**
-     * Get domain contacts.
+     * Get domain contacts - NOT FULLY SUPPORTED by BTCL.
+     * Returns contact info from domain details.
      */
     public function getContacts(string $domain): array
     {
         return $this->executeApiCall('getContacts', function () use ($domain) {
             $this->validateDomain($domain);
 
-            $orderId = $this->getOrderId($domain);
-
-            $response = $this->makeRequest('/domains/details.json', 'GET', [
-                'order-id' => $orderId,
-                'options' => ['ContactIds'],
+            $response = $this->makeRequest('domain_info.do', [
+                'domain' => $domain,
             ]);
+
+            $contacts = [
+                'registrant' => [
+                    'name' => $response['clientFullName'] ?? '',
+                    'nid' => $response['clientNid'] ?? '',
+                    'email' => $response['clientEmail'] ?? '',
+                    'address' => $response['clientContactAddress'] ?? '',
+                    'phone' => $response['clientContactNumber'] ?? '',
+                ],
+            ];
 
             return $this->standardizeResponse([
                 'success' => true,
                 'domain' => $domain,
-                'contacts' => $this->parseContacts($response),
+                'contacts' => $contacts,
             ]);
         }, ['domain' => $domain]);
     }
 
     /**
-     * Update domain contacts.
+     * Update domain contacts - NOT SUPPORTED by BTCL.
      */
     public function updateContacts(string $domain, array $contacts): array
     {
-        return $this->executeApiCall('updateContacts', function () use ($domain, $contacts) {
-            $this->validateDomain($domain);
-
-            $orderId = $this->getOrderId($domain);
-            $contactIds = $this->prepareContactIds($contacts);
-
-            $response = $this->makeRequest('/domains/modify-contact.json', 'POST', [
-                'order-id' => $orderId,
-                'reg-contact-id' => $contactIds['registrant'] ?? null,
-                'admin-contact-id' => $contactIds['admin'] ?? null,
-                'tech-contact-id' => $contactIds['tech'] ?? null,
-                'billing-contact-id' => $contactIds['billing'] ?? null,
-            ]);
-
-            return $this->standardizeResponse([
-                'success' => true,
-                'domain' => $domain,
-                'message' => 'Contacts updated successfully',
-            ]);
-        }, ['domain' => $domain]);
+        throw new RegistrarException(
+            message: 'Contact updates are not supported by BTCL registrar',
+            registrarName: $this->name,
+            errorDetails: ['feature' => 'contact_update', 'supported' => false]
+        );
     }
 
     /**
-     * Get DNS records.
+     * Get DNS records - NOT SUPPORTED by BTCL.
      */
     public function getDnsRecords(string $domain): array
     {
-        return $this->executeApiCall('getDnsRecords', function () use ($domain) {
-            $this->validateDomain($domain);
-
-            $orderId = $this->getOrderId($domain);
-
-            $response = $this->makeRequest('/dns/manage/search-records.json', 'GET', [
-                'domain-name' => $domain,
-                'type' => 'all',
-            ]);
-
-            return $this->standardizeResponse([
-                'success' => true,
-                'domain' => $domain,
-                'records' => $response ?? [],
-            ]);
-        }, ['domain' => $domain]);
+        throw new RegistrarException(
+            message: 'DNS record management is not supported by BTCL registrar',
+            registrarName: $this->name,
+            errorDetails: ['feature' => 'dns_records', 'supported' => false]
+        );
     }
 
     /**
-     * Update DNS records.
+     * Update DNS records - NOT SUPPORTED by BTCL.
      */
     public function updateDnsRecords(string $domain, array $records): array
     {
-        return $this->executeApiCall('updateDnsRecords', function () use ($domain, $records) {
-            $this->validateDomain($domain);
-
-            // BTCL API requires individual API calls for each record type
-            foreach ($records as $record) {
-                $this->makeRequest('/dns/manage/add-record.json', 'POST', [
-                    'domain-name' => $domain,
-                    'type' => $record['type'],
-                    'host' => $record['host'] ?? '@',
-                    'value' => $record['value'],
-                    'ttl' => $record['ttl'] ?? 3600,
-                ]);
-            }
-
-            return $this->standardizeResponse([
-                'success' => true,
-                'domain' => $domain,
-                'message' => 'DNS records updated successfully',
-            ]);
-        }, ['domain' => $domain, 'records' => $records]);
+        throw new RegistrarException(
+            message: 'DNS record management is not supported by BTCL registrar',
+            registrarName: $this->name,
+            errorDetails: ['feature' => 'dns_records', 'supported' => false]
+        );
     }
 
     /**
@@ -420,59 +370,61 @@ class BTCLRegistrar extends AbstractRegistrar
         return $this->executeApiCall('getInfo', function () use ($domain) {
             $this->validateDomain($domain);
 
-            $orderId = $this->getOrderId($domain);
-
-            $response = $this->makeRequest('/domains/details.json', 'GET', [
-                'order-id' => $orderId,
-                'options' => ['All'],
+            $response = $this->makeRequest('domain_info.do', [
+                'domain' => $domain,
             ]);
+
+            $nameservers = [];
+            if (!empty($response['primaryDns'])) {
+                $nameservers[] = $response['primaryDns'];
+            }
+            if (!empty($response['secondaryDns'])) {
+                $nameservers[] = $response['secondaryDns'];
+            }
+            if (!empty($response['tertiaryDns'])) {
+                $nameservers[] = $response['tertiaryDns'];
+            }
 
             return $this->standardizeResponse([
                 'success' => true,
                 'domain' => $domain,
-                'status' => $this->mapOrderStatus($response['currentstatus'] ?? 'unknown'),
-                'expiry_date' => $response['endtime'] ?? null,
-                'is_locked' => $response['orderstatus']['transferlock'] ?? false,
-                'auto_renew' => $response['autorenew'] ?? false,
-                'nameservers' => $response['ns'] ?? [],
+                'status' => 'active',
+                'activation_date' => $response['activationDate'] ?? null,
+                'expiry_date' => $response['expiryDate'] ?? null,
+                'nameservers' => $nameservers,
+                'registrant' => [
+                    'name' => $response['clientFullName'] ?? '',
+                    'nid' => $response['clientNid'] ?? '',
+                    'email' => $response['clientEmail'] ?? '',
+                    'address' => $response['clientContactAddress'] ?? '',
+                    'phone' => $response['clientContactNumber'] ?? '',
+                ],
             ]);
         }, ['domain' => $domain]);
     }
 
     /**
-     * Lock a domain.
+     * Lock a domain - NOT SUPPORTED by BTCL.
      */
     public function lock(string $domain): bool
     {
-        return $this->executeApiCall('lock', function () use ($domain) {
-            $this->validateDomain($domain);
-
-            $orderId = $this->getOrderId($domain);
-
-            $this->makeRequest('/domains/enable-theft-protection.json', 'POST', [
-                'order-id' => $orderId,
-            ]);
-
-            return true;
-        }, ['domain' => $domain]);
+        throw new RegistrarException(
+            message: 'Domain locking is not supported by BTCL registrar',
+            registrarName: $this->name,
+            errorDetails: ['feature' => 'lock', 'supported' => false]
+        );
     }
 
     /**
-     * Unlock a domain.
+     * Unlock a domain - NOT SUPPORTED by BTCL.
      */
     public function unlock(string $domain): bool
     {
-        return $this->executeApiCall('unlock', function () use ($domain) {
-            $this->validateDomain($domain);
-
-            $orderId = $this->getOrderId($domain);
-
-            $this->makeRequest('/domains/disable-theft-protection.json', 'POST', [
-                'order-id' => $orderId,
-            ]);
-
-            return true;
-        }, ['domain' => $domain]);
+        throw new RegistrarException(
+            message: 'Domain unlocking is not supported by BTCL registrar',
+            registrarName: $this->name,
+            errorDetails: ['feature' => 'unlock', 'supported' => false]
+        );
     }
 
     /**
@@ -482,11 +434,9 @@ class BTCLRegistrar extends AbstractRegistrar
     {
         try {
             // Test with balance check endpoint
-            $response = $this->makeRequest('/billing/customer-balance.json', 'GET', [
-                'customer-id' => $this->authUserId,
-            ]);
+            $response = $this->makeRequest('balance.do', []);
 
-            return isset($response['sellingcurrencybalance']) || isset($response['availablebalance']);
+            return isset($response['balance']) && isset($response['responseCode']) && $response['responseCode'] == 2000;
         } catch (\Exception $e) {
             $this->logError('Connection test failed', [
                 'error' => $e->getMessage(),
@@ -497,25 +447,22 @@ class BTCLRegistrar extends AbstractRegistrar
     }
 
     /**
-     * Make HTTP request to BTCL API.
+     * Make HTTP request to BTCL API using Basic Auth.
      */
-    protected function makeRequest(string $endpoint, string $method = 'GET', array $params = []): array
+    protected function makeRequest(string $endpoint, array $params = []): array
     {
-        $url = rtrim($this->apiUrl, '/') . $endpoint;
+        $url = rtrim($this->apiUrl, '/') . '/' . ltrim($endpoint, '/');
 
-        // Add authentication parameters
-        $params['auth-userid'] = $this->authUserId;
-        $params['api-key'] = $this->apiKey;
-
-        $this->logApiCall($method, $endpoint, $params);
+        $this->logApiCall('POST', $endpoint, $params);
 
         try {
             $response = Http::timeout($this->timeout)
+                ->withBasicAuth($this->username, $this->password)
                 ->withHeaders([
                     'Accept' => 'application/json',
                     'Content-Type' => 'application/json',
                 ])
-                ->$method($url, $params);
+                ->post($url, $params);
 
             if (!$response->successful()) {
                 throw RegistrarException::apiError(
@@ -531,11 +478,14 @@ class BTCLRegistrar extends AbstractRegistrar
             $data = $response->json();
 
             // Check for API error response
-            if (isset($data['status']) && $data['status'] === 'ERROR') {
+            if (isset($data['status']) && $data['status'] === 'error') {
+                $code = $data['responseCode'] ?? $data['response_code'] ?? 5000;
+                $message = $data['message'] ?? $this->responseCodes[$code] ?? 'API error';
+                
                 throw RegistrarException::apiError(
                     $this->name,
-                    $data['message'] ?? 'API error',
-                    ['error_data' => $data]
+                    $message,
+                    ['error_data' => $data, 'response_code' => $code]
                 );
             }
 
@@ -549,80 +499,119 @@ class BTCLRegistrar extends AbstractRegistrar
     }
 
     /**
-     * Get order ID for a domain.
+     * Get domain pricing.
      */
-    protected function getOrderId(string $domain): string
+    public function getDomainRate(string $domain, int $years = 1): array
     {
-        // Try to get from cache first
-        $cacheKey = "btcl_order_{$domain}";
-        
-        return $this->cacheOrExecute($cacheKey, 3600, function () use ($domain) {
-            $response = $this->makeRequest('/domains/search.json', 'GET', [
-                'domain-name' => $domain,
-                'no-of-records' => 1,
-            ]);
+        $response = $this->makeRequest('domain_rates.do', [
+            'domain' => $domain,
+            'year' => $years,
+        ]);
 
-            if (empty($response)) {
-                throw RegistrarException::domainNotFound($this->name, $domain);
-            }
-
-            $orderId = $response[0]['orderid'] ?? null;
-
-            if (!$orderId) {
-                throw RegistrarException::domainNotFound($this->name, $domain);
-            }
-
-            return (string) $orderId;
-        });
-    }
-
-    /**
-     * Prepare contact IDs from contact data.
-     */
-    protected function prepareContactIds(array $contacts): array
-    {
-        $contactIds = [];
-
-        foreach (['registrant', 'admin', 'tech', 'billing'] as $type) {
-            if (isset($contacts[$type])) {
-                $contactIds[$type] = $this->createOrUpdateContact($contacts[$type]);
-            }
-        }
-
-        return $contactIds;
-    }
-
-    /**
-     * Create or update a contact and return contact ID.
-     */
-    protected function createOrUpdateContact(array $contactData): string
-    {
-        // Create new contact
-        $response = $this->makeRequest('/contacts/add.json', 'POST', array_merge($contactData, [
-            'customer-id' => $this->authUserId,
-        ]));
-
-        return (string) $response;
-    }
-
-    /**
-     * Parse contacts from API response.
-     */
-    protected function parseContacts(array $response): array
-    {
         return [
-            'registrant' => $response['admincontact'] ?? [],
-            'admin' => $response['admincontact'] ?? [],
-            'tech' => $response['techcontact'] ?? [],
-            'billing' => $response['billingcontact'] ?? [],
+            'domain' => $domain,
+            'years' => $years,
+            'registration_rate' => $response['regRate'] ?? 0,
+            'renewal_rate' => $response['renewRate'] ?? 0,
         ];
     }
 
     /**
-     * Map BTCL order status to standard status.
+     * Get account balance.
      */
-    protected function mapOrderStatus(string $status): string
+    public function getBalance(): array
     {
-        return $this->orderStatuses[$status] ?? 'unknown';
+        $response = $this->makeRequest('balance.do', []);
+
+        return [
+            'balance' => $response['balance'] ?? 0,
+            'currency' => 'BDT',
+        ];
+    }
+
+    /**
+     * Get billing transactions.
+     */
+    public function getTransactions(string $fromDate, string $toDate): array
+    {
+        $response = $this->makeRequest('billing_transactions.do', [
+            'fromDate' => $fromDate, // Format: YYYY-MM-DD
+            'toDate' => $toDate,     // Format: YYYY-MM-DD
+        ]);
+
+        return [
+            'opening_balance' => $response['opening_balance'] ?? 0,
+            'transactions' => $response['transactions'] ?? [],
+        ];
+    }
+
+    /**
+     * Format address from contact data.
+     */
+    protected function formatAddress(array $contact): string
+    {
+        $parts = [];
+        
+        if (!empty($contact['address'])) {
+            $parts[] = $contact['address'];
+        }
+        if (!empty($contact['city'])) {
+            $parts[] = $contact['city'];
+        }
+        if (!empty($contact['state'])) {
+            $parts[] = $contact['state'];
+        }
+        if (!empty($contact['country'])) {
+            $parts[] = $contact['country'];
+        }
+        if (!empty($contact['zip'])) {
+            $parts[] = $contact['zip'];
+        }
+
+        return implode(', ', $parts) ?: ($contact['address'] ?? '');
+    }
+
+    /**
+     * Format phone number for BTCL (requires +880 prefix, 14 length, no space).
+     */
+    protected function formatPhone(string $phone): string
+    {
+        // Remove all non-numeric characters
+        $phone = preg_replace('/[^0-9]/', '', $phone);
+        
+        // If starts with 880, add +
+        if (str_starts_with($phone, '880')) {
+            return '+' . $phone;
+        }
+        
+        // If starts with 0, replace with +880
+        if (str_starts_with($phone, '0')) {
+            return '+880' . substr($phone, 1);
+        }
+        
+        // If 10-11 digits, assume Bangladesh number
+        if (strlen($phone) >= 10 && strlen($phone) <= 11) {
+            return '+880' . ltrim($phone, '0');
+        }
+        
+        // Return as-is with + prefix if not already there
+        return str_starts_with($phone, '+') ? $phone : '+' . $phone;
+    }
+
+    /**
+     * Validate years (BTCL min: 2, max: 10 for registration, 1-10 for renewal).
+     */
+    protected function validateYears(int $years, bool $isRenewal = false): void
+    {
+        $min = $isRenewal ? 1 : 2;
+        $max = 10;
+        
+        if ($years < $min || $years > $max) {
+            throw new RegistrarException(
+                message: "Invalid years: {$years}. Must be between {$min} and {$max}.",
+                registrarName: $this->name,
+                errorDetails: ['years' => $years, 'min' => $min, 'max' => $max]
+            );
+        }
     }
 }
