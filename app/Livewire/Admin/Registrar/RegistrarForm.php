@@ -161,6 +161,7 @@ class RegistrarForm extends Component
         return [
             'App\\Services\\Registrar\\MockRegistrar' => 'Mock Registrar (Testing)',
             'App\\Services\\Registrar\\ResellerClubRegistrar' => 'ResellerClub / LogicBoxes',
+            'App\\Services\\Registrar\\BTCLRegistrar' => 'BTCL Domain Provider',
         ];
     }
 

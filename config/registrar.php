@@ -111,6 +111,21 @@ return [
             'timeout' => 45,
         ],
 
+        'btcl' => [
+            'api_url' => env('BTCL_API_URL', 'https://api.btcldomains.com/api'),
+            'test_mode' => env('BTCL_TEST_MODE', false),
+            'timeout' => 45,
+            'rate_limit' => [
+                'max_attempts' => 120, // Higher limit for production registrar
+                'decay_minutes' => 1,
+            ],
+            'default_nameservers' => [
+                env('BTCL_NS1', 'ns1.btcl.com.bd'),
+                env('BTCL_NS2', 'ns2.btcl.com.bd'),
+            ],
+            'cache_ttl' => 300, // Cache API responses for 5 minutes
+        ],
+
     ],
 
     /*
@@ -140,6 +155,14 @@ return [
             'auto_renew' => true,
         ],
         'logicboxes' => [
+            'dns_management' => true,
+            'whois_privacy' => true,
+            'domain_forwarding' => true,
+            'email_forwarding' => true,
+            'dnssec' => false,
+            'auto_renew' => true,
+        ],
+        'btcl' => [
             'dns_management' => true,
             'whois_privacy' => true,
             'domain_forwarding' => true,
