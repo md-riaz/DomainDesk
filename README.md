@@ -14,10 +14,10 @@ A comprehensive SaaS platform built with Laravel 12 and Livewire 4, enabling par
 
 ## 📸 Platform Preview
 
-### Welcome Page
-![Welcome Page](https://github.com/user-attachments/assets/0cd15aa7-9e29-444a-a4e2-d118bc0cfcbe)
+### Landing Page
+![Landing Page](https://github.com/user-attachments/assets/477f77a1-cf1c-468e-8bd8-53fc45bdb826)
 
-Laravel-powered domain reseller platform with modern, clean interface.
+Clean, white-label domain search landing page with BDT currency support. Features domain search, popular TLD extensions, and key platform benefits.
 
 ### Login Page
 ![Login Page](https://github.com/user-attachments/assets/95c66635-e098-49b4-b3e2-254dbe47a816)
@@ -105,13 +105,15 @@ For testing purposes, the following demo accounts are created by the seeder:
 
 ### Core Capabilities
 - ✅ **Multi-Tenant Architecture** - Complete data isolation by partner
-- ✅ **White-Label Branding** - Custom domains, logos, colors, emails, invoices
+- ✅ **White-Label Branding** - Custom domains, logos, colors, emails, invoices (no Laravel branding)
+- ✅ **BDT Currency Support** - Native Bangladeshi Taka (৳) support throughout the system
 - ✅ **Domain Lifecycle Management** - Register, renew, transfer, and manage domains
 - ✅ **Wallet-Based Billing** - Append-only ledger for financial integrity
 - ✅ **Partner Pricing Rules** - Custom markup (fixed/percentage) per TLD
 - ✅ **Automated Renewals** - Scheduled auto-renewals with wallet checks
 - ✅ **Full Audit Trail** - Complete compliance logging
-- ✅ **Registrar-Agnostic** - Abstraction layer for multiple registrars
+- ✅ **Registrar-Agnostic** - Abstraction layer for multiple registrars (ResellerClub integrated)
+- ✅ **TLD Management** - Admin can enable/disable TLDs and assign registrar providers
 
 ### User Roles
 - **Super Admin** - Full system access, registrar control, partner management
