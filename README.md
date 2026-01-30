@@ -113,29 +113,29 @@ Set custom pricing with fixed or percentage-based markup for each TLD. Control y
 Clients are end-users who purchase and manage domains through partners.
 
 **Client Dashboard**
-![Client Dashboard - Coming Soon]
+![Client Dashboard](https://github.com/user-attachments/assets/41095a85-f683-40e3-92b9-e9a476108936)
 
-User-friendly dashboard displaying active domains, upcoming renewals, recent invoices, and quick access to domain management tools.
+User-friendly dashboard displaying active domains, upcoming renewals, recent invoices, and quick access to domain management tools. View key metrics at a glance with an intuitive interface.
 
 **Domain Search**
-![Domain Search - Coming Soon]
+![Domain Search](https://github.com/user-attachments/assets/f6e3a091-e0fb-40f4-91a9-b21efc4efb36)
 
-Advanced domain search with bulk lookup, availability checking, and instant pricing. Search multiple domains simultaneously.
+Advanced domain search with bulk lookup capabilities and instant availability checking. Search for multiple domains simultaneously and select registration period.
 
 **Domain Management**
-![Domain Management - Coming Soon]
+![Domain Management](https://github.com/user-attachments/assets/5ed8a91b-118c-4072-8c4a-70e5a1b69941)
 
-Comprehensive domain management interface for renewals, transfers, and domain settings. Easy-to-use controls for all domain operations.
+Comprehensive domain portfolio management interface showing all domains with status, expiry dates, and auto-renewal settings. Sort, filter, and manage renewals efficiently.
 
-**DNS Management**
-![DNS Management - Coming Soon]
+**Domain Details & DNS Management**
+![Domain Details](https://github.com/user-attachments/assets/1916212b-9b6d-4119-8ae7-876d43025fc9)
 
-Manage DNS records, nameservers, and domain configuration. Full control over A, AAAA, CNAME, MX, TXT, and other record types.
+Detailed domain view with tabs for overview, nameservers, DNS records, contacts, and documents. Complete control over domain configuration with one-click synchronization.
 
 **Invoice History**
-![Invoice History - Coming Soon]
+![Invoice History](https://github.com/user-attachments/assets/f3d5d424-8d79-402c-bcce-38b42f7ce395)
 
-Track all invoices, payments, and transaction history. Download invoices and view detailed billing information.
+Track all invoices with advanced filtering by status and date range. View payment history and download invoices for your records.
 
 **Client Capabilities:**
 - Search and register domains
