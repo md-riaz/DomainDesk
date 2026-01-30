@@ -15,7 +15,7 @@ A comprehensive SaaS platform built with Laravel 12 and Livewire 4, enabling par
 ## 📸 Platform Preview
 
 ### Landing Page - White-Label Partner System
-![Landing Page](https://github.com/user-attachments/assets/d3978330-332a-461d-9555-cd3d74167cd2)
+![Landing Page](https://github.com/user-attachments/assets/050dceea-906a-4c07-a0b2-a051f9e3b330)
 
 Professional landing page showcasing the white-label partner system. Features include role-based demo credentials, multi-tenant architecture overview, and key platform capabilities.
 
@@ -28,19 +28,29 @@ Professional landing page showcasing the white-label partner system. Features in
 The Super Admin has complete system control and manages all partners.
 
 **Login Page**
-![Login Page](https://github.com/user-attachments/assets/c2f560e9-2118-4b24-add1-564c46f63775)
+![Login Page](https://github.com/user-attachments/assets/931cc170-09e6-4736-923a-a3270c5d526b)
 
 Secure login interface with partner-specific branding support. Automatically redirects users to their role-appropriate dashboard.
 
 **Admin Dashboard**
-![Admin Dashboard](https://github.com/user-attachments/assets/7541cc4e-ab4a-410a-aa57-ad5ac2e53b72)
+![Admin Dashboard](https://github.com/user-attachments/assets/e005959d-1dff-46ed-92f1-6af08c3c0339)
 
 Comprehensive dashboard with system-wide metrics including total partners, clients, domains, and revenue tracking. Real-time monitoring of platform health and activity.
 
 **Partner Management**
-![Partner Management](https://github.com/user-attachments/assets/78a1742d-ac92-4be0-86b6-a38078fa3d7f)
+![Partner Management](https://github.com/user-attachments/assets/c83d9a1f-4636-4e02-a3f4-ab1d231a69b5)
 
 Complete partner management interface with filtering, sorting, and detailed views. Manage partner status, wallet balances, and view business metrics at a glance.
+
+**Partner Details**
+![Partner Details](https://github.com/user-attachments/assets/13917cad-5b29-4d24-9162-4f2bf4153a86)
+
+Detailed view of individual partner accounts showing client counts, domain statistics, wallet balance, and revenue metrics. Admins can adjust wallets, suspend partners, or impersonate to troubleshoot issues.
+
+**Add New Partner**
+![Add New Partner](https://github.com/user-attachments/assets/30db4821-7dd5-4b5e-be78-a4fb16a68b09)
+
+Simple and intuitive interface for creating new partner accounts. Set initial wallet balance, configure status, and optionally send welcome emails with login credentials.
 
 **Registrar Management**
 ![Registrar Management](https://github.com/user-attachments/assets/28b766a8-4dad-4ede-a3c9-74555fe5d6ea)
@@ -68,14 +78,14 @@ Manage Top-Level Domains with pricing configuration, feature support, and regist
 Partners operate as resellers with white-label capabilities.
 
 **Partner Dashboard**
-![Partner Dashboard](https://github.com/user-attachments/assets/c5484127-295d-4290-a55a-44436c715f57)
+![Partner Dashboard](https://github.com/user-attachments/assets/852786ea-549e-4a83-aca0-b4136d13169c)
 
 Business metrics dashboard showing revenue, client count, domain statistics, and wallet balance. Track performance and manage your reseller business effectively.
 
 **Client Management**
-![Client Management](https://github.com/user-attachments/assets/37bf6bfa-a771-4a42-a8e5-6a9417182be1)
+![Client Management](https://github.com/user-attachments/assets/07365612-bbcd-4abd-97b4-31281854d44b)
 
-Create and manage client accounts, suspend/activate users, and monitor client activity. Complete control over your customer base with search and filtering capabilities.
+Partners can efficiently manage their client base with search, filtering, and bulk export capabilities. View client status, domain counts, and perform actions like suspend or view details.
 
 **Branding Configuration**
 ![Branding Configuration - Coming Soon]
