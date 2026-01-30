@@ -99,6 +99,10 @@ Route::middleware(['auth', 'role:partner', 'partner.context'])->prefix('partner'
     Route::get('/clients/add', \App\Livewire\Partner\Client\AddClient::class)->name('clients.add');
     Route::get('/clients/{clientId}', \App\Livewire\Partner\Client\ClientDetail::class)->name('clients.show');
     
+    // Invoice routes
+    Route::get('/invoices', \App\Livewire\Partner\Invoice\InvoiceList::class)->name('invoices.list');
+    Route::get('/invoices/{invoice}', \App\Livewire\Partner\Invoice\InvoiceDetail::class)->name('invoices.show');
+    
     // Settings routes
     Route::get('/settings/branding', \App\Livewire\Partner\Settings\BrandingSettings::class)->name('settings.branding');
     Route::get('/settings/domains', \App\Livewire\Partner\Settings\DomainSettings::class)->name('settings.domains');
@@ -121,6 +125,13 @@ Route::middleware(['auth', 'role:client', 'partner.context'])->prefix('client')-
     Route::get('/domains/{domain}/transfer-status', \App\Livewire\Client\Domain\TransferStatus::class)->name('domains.transfer-status');
     Route::get('/domains/{domain}/nameservers', ManageNameservers::class)->name('domains.nameservers');
     Route::get('/domains/{domain}/dns', ManageDns::class)->name('domains.dns');
+    
+    // Order routes (shopping cart)
+    Route::get('/cart', \App\Livewire\Client\Order\Cart::class)->name('order.cart');
+    Route::get('/checkout', \App\Livewire\Client\Order\Checkout::class)->name('order.checkout');
+    Route::get('/orders', \App\Livewire\Client\Order\OrderList::class)->name('orders.list');
+    Route::get('/orders/{orderId}', \App\Livewire\Client\Order\OrderDetail::class)->name('orders.show');
+    Route::get('/orders/{order}/complete', \App\Livewire\Client\Order\OrderComplete::class)->name('order.complete');
     
     // Invoice routes
     Route::get('/invoices', \App\Livewire\Client\Invoice\InvoiceList::class)->name('invoices.list');

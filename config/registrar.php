@@ -111,6 +111,20 @@ return [
             'timeout' => 45,
         ],
 
+        'btcl' => [
+            'api_url' => env('BTCL_API_URL', 'https://141.lyre.us/rsdom'),
+            'timeout' => 45,
+            'rate_limit' => [
+                'max_attempts' => 60, // Conservative limit for BTCL
+                'decay_minutes' => 1,
+            ],
+            'default_nameservers' => [
+                env('BTCL_NS1', 'ns1.btcl.com.bd'),
+                env('BTCL_NS2', 'ns2.btcl.com.bd'),
+            ],
+            'cache_ttl' => 300, // Cache API responses for 5 minutes
+        ],
+
     ],
 
     /*
@@ -146,6 +160,16 @@ return [
             'email_forwarding' => true,
             'dnssec' => false,
             'auto_renew' => true,
+        ],
+        'btcl' => [
+            'dns_management' => false, // BTCL does not support DNS record management
+            'whois_privacy' => false,  // BTCL does not support WHOIS privacy
+            'domain_forwarding' => false,
+            'email_forwarding' => false,
+            'dnssec' => false,
+            'auto_renew' => false,
+            'domain_transfer' => false, // BTCL does not support domain transfers
+            'domain_lock' => false,     // BTCL does not support domain locking
         ],
     ],
 

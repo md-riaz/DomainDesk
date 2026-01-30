@@ -135,7 +135,7 @@
                                 $basePrice = $tld->getBasePrice('register', 1);
                             @endphp
                             @if($basePrice)
-                                ${{ number_format($basePrice, 2) }}/yr
+                                ৳{{ number_format($basePrice, 2) }}/yr
                             @else
                                 <span class="text-gray-400">Not set</span>
                             @endif

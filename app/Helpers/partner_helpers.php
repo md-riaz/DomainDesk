@@ -90,3 +90,39 @@ if (!function_exists('auditLog')) {
         ]);
     }
 }
+
+if (!function_exists('formatBDT')) {
+    /**
+     * Format amount in BDT (Bangladeshi Taka)
+     */
+    function formatBDT(int $amountInCents, bool $showSymbol = true): string
+    {
+        $amount = $amountInCents / 100;
+        $formatted = number_format($amount, 2);
+        
+        return $showSymbol ? "৳{$formatted}" : $formatted;
+    }
+}
+
+if (!function_exists('formatCurrency')) {
+    /**
+     * Format amount in the system's default currency
+     */
+    function formatCurrency(int $amountInCents, ?string $currency = null): string
+    {
+        $currency = $currency ?? config('app.currency', 'BDT');
+        
+        $amount = $amountInCents / 100;
+        $formatted = number_format($amount, 2);
+        
+        // Support multiple currencies
+        return match($currency) {
+            'BDT' => "৳{$formatted}",
+            'USD' => "\${$formatted}",
+            'EUR' => "€{$formatted}",
+            'GBP' => "£{$formatted}",
+            'INR' => "₹{$formatted}",
+            default => "{$currency} {$formatted}",
+        };
+    }
+}

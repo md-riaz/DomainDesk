@@ -2,7 +2,9 @@
 
 namespace App\Livewire\Client\Domain;
 
+use App\Enums\OrderItemType;
 use App\Services\DomainSearchService;
+use App\Services\OrderService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
 use Livewire\Attributes\Validate;
@@ -28,7 +30,9 @@ class SearchDomain extends Component
     public bool $hasSearched = false;
     public bool $showSuggestions = false;
     public ?string $errorMessage = null;
+    public ?string $successMessage = null;
     public int $years = 1;
+    public array $addedToCart = []; // Track which domains were added to cart
 
     public function mount()
     {
@@ -133,6 +137,66 @@ class SearchDomain extends Component
     {
         $this->searchQuery = $domain;
         $this->search();
+    }
+
+    /**
+     * Add domain to cart
+     */
+    public function addToCart(string $domainName, int $years = null): void
+    {
+        try {
+            $partner = currentPartner();
+            $client = Auth::user();
+            
+            /** @var OrderService $orderService */
+            $orderService = app(OrderService::class);
+            
+            // Get or create draft order
+            $order = $orderService->getOrCreateDraftOrder($partner, $client);
+            
+            // Add domain to order
+            $orderService->addDomainToOrder(
+                $order,
+                $domainName,
+                $years ?? $this->years,
+                OrderItemType::DomainRegistration
+            );
+            
+            $this->successMessage = "Added {$domainName} to cart";
+            $this->addedToCart[$domainName] = true;
+            
+            $this->dispatch('cart-updated');
+        } catch (\Exception $e) {
+            $this->errorMessage = $e->getMessage();
+        }
+    }
+
+    /**
+     * Add multiple domains to cart
+     */
+    public function addAllAvailableToCart(): void
+    {
+        $added = 0;
+        $errors = [];
+        
+        foreach ($this->searchResults as $result) {
+            if ($result['available'] ?? false) {
+                try {
+                    $this->addToCart($result['domain'], $this->years);
+                    $added++;
+                } catch (\Exception $e) {
+                    $errors[] = $result['domain'];
+                }
+            }
+        }
+        
+        if ($added > 0) {
+            $this->successMessage = "Added {$added} domain(s) to cart";
+        }
+        
+        if (!empty($errors)) {
+            $this->errorMessage = 'Some domains could not be added: ' . implode(', ', $errors);
+        }
     }
 
     public function render()

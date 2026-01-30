@@ -43,14 +43,16 @@
                         Credentials (JSON) *
                     </label>
                     <p class="text-sm text-gray-500 mb-2">
-                        Enter API credentials as JSON. Common fields: <code class="bg-gray-100 px-1 py-0.5 rounded">api_key</code>, <code class="bg-gray-100 px-1 py-0.5 rounded">user_id</code>, <code class="bg-gray-100 px-1 py-0.5 rounded">password</code>
+                        Enter API credentials as JSON. 
+                        <br><strong>ResellerClub:</strong> <code class="bg-gray-100 px-1 py-0.5 rounded">auth_userid</code>, <code class="bg-gray-100 px-1 py-0.5 rounded">api_key</code>
+                        <br><strong>BTCL:</strong> <code class="bg-gray-100 px-1 py-0.5 rounded">username</code>, <code class="bg-gray-100 px-1 py-0.5 rounded">password</code>
                     </p>
                     <textarea
                         wire:model="credentialsJson"
                         id="credentials"
                         rows="8"
                         class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 font-mono text-sm"
-                        placeholder='{"api_key": "your-key", "user_id": "123456"}'
+                        placeholder='{"username": "btcl-username", "password": "btcl-password"}'
                         required
                     ></textarea>
                     @error('credentialsJson') <span class="text-red-600 text-sm">{{ $message }}</span> @enderror
