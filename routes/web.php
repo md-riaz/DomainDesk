@@ -99,6 +99,10 @@ Route::middleware(['auth', 'role:partner', 'partner.context'])->prefix('partner'
     Route::get('/clients/add', \App\Livewire\Partner\Client\AddClient::class)->name('clients.add');
     Route::get('/clients/{clientId}', \App\Livewire\Partner\Client\ClientDetail::class)->name('clients.show');
     
+    // Invoice routes
+    Route::get('/invoices', \App\Livewire\Partner\Invoice\InvoiceList::class)->name('invoices.list');
+    Route::get('/invoices/{invoice}', \App\Livewire\Partner\Invoice\InvoiceDetail::class)->name('invoices.show');
+    
     // Settings routes
     Route::get('/settings/branding', \App\Livewire\Partner\Settings\BrandingSettings::class)->name('settings.branding');
     Route::get('/settings/domains', \App\Livewire\Partner\Settings\DomainSettings::class)->name('settings.domains');
