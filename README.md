@@ -15,7 +15,7 @@ A comprehensive SaaS platform built with Laravel 12 and Livewire 4, enabling par
 ## 📸 Platform Preview
 
 ### Landing Page - White-Label Partner System
-![Landing Page](https://github.com/user-attachments/assets/477f77a1-cf1c-468e-8bd8-53fc45bdb826)
+![Landing Page](https://github.com/user-attachments/assets/d3978330-332a-461d-9555-cd3d74167cd2)
 
 Professional landing page showcasing the white-label partner system. Features include role-based demo credentials, multi-tenant architecture overview, and key platform capabilities.
 
@@ -27,15 +27,30 @@ Professional landing page showcasing the white-label partner system. Features in
 
 The Super Admin has complete system control and manages all partners.
 
+**Login Page**
+![Login Page](https://github.com/user-attachments/assets/c2f560e9-2118-4b24-add1-564c46f63775)
+
+Secure login interface with partner-specific branding support. Automatically redirects users to their role-appropriate dashboard.
+
 **Admin Dashboard**
-![Admin Dashboard](https://github.com/user-attachments/assets/695e2af0-63e1-4c4f-a06f-4bb7a6f278d5)
+![Admin Dashboard](https://github.com/user-attachments/assets/7541cc4e-ab4a-410a-aa57-ad5ac2e53b72)
 
 Comprehensive dashboard with system-wide metrics including total partners, clients, domains, and revenue tracking. Real-time monitoring of platform health and activity.
 
 **Partner Management**
-![Partner Management](https://github.com/user-attachments/assets/1410fe7b-e273-4116-83c5-299308863f2d)
+![Partner Management](https://github.com/user-attachments/assets/78a1742d-ac92-4be0-86b6-a38078fa3d7f)
 
 Complete partner management interface with filtering, sorting, and detailed views. Manage partner status, wallet balances, and view business metrics at a glance.
+
+**Registrar Management**
+![Registrar Management](https://github.com/user-attachments/assets/28b766a8-4dad-4ede-a3c9-74555fe5d6ea)
+
+Configure and manage domain registrars including ResellerClub and BTCL. Test connections, monitor health, and assign TLDs to specific registrars.
+
+**TLD Management**
+![TLD Management](https://github.com/user-attachments/assets/8300ee72-5bda-47c9-a012-dd7f5b05a39f)
+
+Manage Top-Level Domains with pricing configuration, feature support, and registrar assignment. Enable/disable TLDs and set base pricing for partners.
 
 **Admin Capabilities:**
 - Create and manage partner accounts
@@ -53,14 +68,14 @@ Complete partner management interface with filtering, sorting, and detailed view
 Partners operate as resellers with white-label capabilities.
 
 **Partner Dashboard**
-![Partner Dashboard - Coming Soon]
+![Partner Dashboard](https://github.com/user-attachments/assets/c5484127-295d-4290-a55a-44436c715f57)
 
 Business metrics dashboard showing revenue, client count, domain statistics, and wallet balance. Track performance and manage your reseller business effectively.
 
 **Client Management**
-![Client Management - Coming Soon]
+![Client Management](https://github.com/user-attachments/assets/37bf6bfa-a771-4a42-a8e5-6a9417182be1)
 
-Create and manage client accounts, suspend/activate users, and monitor client activity. Complete control over your customer base.
+Create and manage client accounts, suspend/activate users, and monitor client activity. Complete control over your customer base with search and filtering capabilities.
 
 **Branding Configuration**
 ![Branding Configuration - Coming Soon]
